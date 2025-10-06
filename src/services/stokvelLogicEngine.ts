@@ -333,8 +333,8 @@ export class StokvelLogicEngine {
   ): PayoutCalculation {
     const activeMembers = members.filter(m => m.is_active)
     
-    if (stokvel.rules.rotation_based && targetMember) {
-      const payoutAmount = stokvel.target_amount || (stokvel.monthly_contribution * activeMembers.length)
+    if (_stokvel.rules.rotation_based && targetMember) {
+      const payoutAmount = _stokvel.target_amount || (_stokvel.monthly_contribution * activeMembers.length)
       return {
         amount: Math.min(payoutAmount, currentBalance),
         type: 'cash',
@@ -373,7 +373,7 @@ export class StokvelLogicEngine {
   }
 
   private static calculateGoodsPayout(
-    stokvel: UserStokvel,
+    _stokvel: UserStokvel,
     currentBalance: number,
     members: StokvelMember[]
   ): PayoutCalculation {
