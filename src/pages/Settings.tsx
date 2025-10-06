@@ -1,89 +1,100 @@
 import { useState, useEffect } from 'react'
-import { Save, Settings as SettingsIcon } from 'lucide-react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { Save, Settings as SettingsIcon, ArrowLeft, Trash2 } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import { Badge } from '../components/ui/badge'
 import { supabase } from '../lib/supabase'
-import { StokveilSettings } from '../types'
+import { useUserStokvel, useUpdateStokvel, useDeleteStokvel } from '../hooks/useUserStokvels'
+import { StokvelWithType } from '../types/multi-stokvel'
+import { formatCurrency } from '../utils/currency'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '../components/ui/alert-dialog'
 
 export const Settings = () => {
-  const [loading, setLoading] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [settings, setSettings] = useState<StokveilSettings | null>(null)
+  const { stokvelId } = useParams<{ stokvelId: string }>()
+  const navigate = useNavigate()
+  const updateStokvel = useUpdateStokvel()
+  const deleteStokvel = useDeleteStokvel()
+  
+  // Use the new multi-stokvel hooks
+  const { data: stokvel, isLoading } = useUserStokvel(stokvelId!)
+  
   const [formData, setFormData] = useState({
-    stokvel_name: '',
-    monthly_contribution: 3500,
-    vehicle_target: 100000,
-    total_members: 13,
-    start_date: '2025-01-01',
+    name: '',
+    description: '',
+    monthly_contribution: 0,
+    target_amount: 0,
+    currency: 'ZAR',
   })
 
   useEffect(() => {
-    fetchSettings()
-  }, [])
-
-  const fetchSettings = async () => {
-    setLoading(true)
-    try {
-      const { data, error } = await supabase
-        .from('settings')
-        .select('*')
-        .limit(1)
-        .single()
-
-      if (error && error.code !== 'PGRST116') {
-        throw error
-      }
-
-      if (data) {
-        setSettings(data)
-        setFormData({
-          stokvel_name: data.stokvel_name,
-          monthly_contribution: data.monthly_contribution,
-          vehicle_target: data.vehicle_target,
-          total_members: data.total_members,
-          start_date: data.start_date,
-        })
-      }
-    } catch (error) {
-      console.error('Error fetching settings:', error)
+    if (stokvel) {
+      setFormData({
+        name: stokvel.name,
+        description: stokvel.description || '',
+        monthly_contribution: stokvel.monthly_contribution,
+        target_amount: stokvel.target_amount || 0,
+        currency: stokvel.currency,
+      })
     }
-    setLoading(false)
-  }
+  }, [stokvel])
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSaving(true)
+    if (!stokvelId) return
 
     try {
-      if (settings) {
-        // Update existing settings
-        const { error } = await supabase
-          .from('settings')
-          .update(formData)
-          .eq('id', settings.id)
-
-        if (error) throw error
-      } else {
-        // Create new settings
-        const { error } = await supabase
-          .from('settings')
-          .insert([formData])
-
-        if (error) throw error
-      }
-
-      await fetchSettings() // Refresh settings
-      alert('Settings saved successfully!')
+      await updateStokvel.mutateAsync({
+        id: stokvelId,
+        updates: formData
+      })
+      // Success feedback would be handled by the mutation onSuccess
     } catch (error) {
-      console.error('Error saving settings:', error)
-      alert('Failed to save settings')
+      console.error('Error updating stokvel:', error)
+      // Error feedback would be handled by the mutation onError
     }
-    setSaving(false)
   }
 
-  if (loading) {
+  const handleDelete = async () => {
+    if (!stokvelId) return
+
+    try {
+      await deleteStokvel.mutateAsync(stokvelId)
+      navigate('/my-stokvels')
+    } catch (error) {
+      console.error('Error deleting stokvel:', error)
+    }
+  }
+
+  // Show error if stokvelId is required but not provided
+  if (!stokvelId) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Stokvel Settings</h1>
+          <p className="text-gray-600 mb-6">No stokvel ID provided in the URL.</p>
+          <Button onClick={() => navigate('/my-stokvels')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to My Stokvels
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -91,18 +102,50 @@ export const Settings = () => {
     )
   }
 
+  if (!stokvel) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Stokvel Not Found</h1>
+          <p className="text-gray-600 mb-6">The requested stokvel could not be found or you don't have access to it.</p>
+          <Button onClick={() => navigate('/my-stokvels')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to My Stokvels
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600">Configure your stokvel parameters</p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button variant="outline" onClick={() => navigate('/my-stokvels')}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Stokvel Settings</h1>
+            <p className="text-gray-600">Configure settings for "{stokvel.name}"</p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Badge variant="secondary" className="text-xs">
+            {stokvel.stokvel_type?.name}
+          </Badge>
+          <Badge variant={stokvel.is_active ? "default" : "secondary"}>
+            {stokvel.is_active ? "Active" : "Inactive"}
+          </Badge>
+        </div>
       </div>
 
+      {/* Main Settings Form */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <SettingsIcon className="h-5 w-5" />
-            <span>Stokvel Configuration</span>
+            <span>Basic Information</span>
           </CardTitle>
           <CardDescription>
             Update the basic settings for your stokvel
@@ -112,134 +155,155 @@ export const Settings = () => {
           <form onSubmit={handleSave} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="stokvel_name">Stokvel Name</Label>
+                <Label htmlFor="name">Stokvel Name</Label>
                 <Input
-                  id="stokvel_name"
-                  value={formData.stokvel_name}
-                  onChange={(e) => setFormData({ ...formData, stokvel_name: e.target.value })}
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="total_members">Total Members</Label>
+                <Label htmlFor="currency">Currency</Label>
                 <Input
-                  id="total_members"
-                  type="number"
-                  min="1"
-                  value={formData.total_members}
-                  onChange={(e) => setFormData({ ...formData, total_members: parseInt(e.target.value) })}
+                  id="currency"
+                  value={formData.currency}
+                  onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="monthly_contribution">Monthly Contribution (ZAR)</Label>
+                <Label htmlFor="monthly_contribution">Monthly Contribution</Label>
                 <Input
                   id="monthly_contribution"
                   type="number"
                   min="0"
                   step="0.01"
                   value={formData.monthly_contribution}
-                  onChange={(e) => setFormData({ ...formData, monthly_contribution: parseFloat(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, monthly_contribution: parseFloat(e.target.value) || 0 })}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="vehicle_target">Vehicle Target Amount (ZAR)</Label>
+                <Label htmlFor="target_amount">Target Amount (Optional)</Label>
                 <Input
-                  id="vehicle_target"
+                  id="target_amount"
                   type="number"
                   min="0"
                   step="0.01"
-                  value={formData.vehicle_target}
-                  onChange={(e) => setFormData({ ...formData, vehicle_target: parseFloat(e.target.value) })}
-                  required
+                  value={formData.target_amount}
+                  onChange={(e) => setFormData({ ...formData, target_amount: parseFloat(e.target.value) || 0 })}
                 />
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="start_date">Stokvel Start Date</Label>
+                <Label htmlFor="description">Description</Label>
                 <Input
-                  id="start_date"
-                  type="date"
-                  value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  required
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Brief description of your stokvel"
                 />
               </div>
             </div>
 
             <div className="flex items-center space-x-4">
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" disabled={updateStokvel.isPending}>
                 <Save className="mr-2 h-4 w-4" />
-                {saving ? 'Saving...' : 'Save Settings'}
+                {updateStokvel.isPending ? 'Saving...' : 'Save Settings'}
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
 
-      {/* Information Card */}
-      <Card className="border-blue-200 bg-blue-50">
+      {/* Current Configuration Display */}
+      <Card>
         <CardHeader>
-          <CardTitle className="text-blue-900">Important Information</CardTitle>
+          <CardTitle>Current Configuration</CardTitle>
         </CardHeader>
-        <CardContent className="text-blue-700">
-          <ul className="space-y-2">
-            <li>• These settings affect how payouts are calculated and triggered</li>
-            <li>• Changes to the vehicle target amount will affect future payout calculations</li>
-            <li>• Monthly contribution amount is used as the default for new contributions</li>
-            <li>• Start date is used for reporting and analytics calculations</li>
-          </ul>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">Monthly Contribution</p>
+              <p className="text-lg font-semibold">
+                {formatCurrency(stokvel.monthly_contribution, stokvel.currency)}
+              </p>
+            </div>
+            {stokvel.target_amount && (
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">Target Amount</p>
+                <p className="text-lg font-semibold">
+                  {formatCurrency(stokvel.target_amount, stokvel.currency)}
+                </p>
+              </div>
+            )}
+            <div className="text-center p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">Start Date</p>
+              <p className="text-lg font-semibold">
+                {new Date(stokvel.start_date).toLocaleDateString()}
+              </p>
+            </div>
+            <div className="text-center p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">Type</p>
+              <p className="text-lg font-semibold">{stokvel.stokvel_type?.name}</p>
+            </div>
+            <div className="text-center p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">Created</p>
+              <p className="text-lg font-semibold">
+                {new Date(stokvel.created_at).toLocaleDateString()}
+              </p>
+            </div>
+            <div className="text-center p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">Last Updated</p>
+              <p className="text-lg font-semibold">
+                {new Date(stokvel.updated_at).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Current Values Display */}
-      {settings && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Current Configuration</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">Stokvel Name</p>
-                <p className="text-lg font-semibold">{settings.stokvel_name}</p>
-              </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">Total Members</p>
-                <p className="text-lg font-semibold">{settings.total_members}</p>
-              </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">Monthly Contribution</p>
-                <p className="text-lg font-semibold">
-                  R{settings.monthly_contribution.toLocaleString()}
-                </p>
-              </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">Vehicle Target</p>
-                <p className="text-lg font-semibold">
-                  R{settings.vehicle_target.toLocaleString()}
-                </p>
-              </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">Start Date</p>
-                <p className="text-lg font-semibold">
-                  {new Date(settings.start_date).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">Last Updated</p>
-                <p className="text-lg font-semibold">
-                  {new Date(settings.updated_at).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Danger Zone */}
+      <Card className="border-red-200">
+        <CardHeader>
+          <CardTitle className="text-red-900">Danger Zone</CardTitle>
+          <CardDescription className="text-red-700">
+            Irreversible actions that affect your stokvel
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Stokvel
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Stokvel</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete "{stokvel.name}"? This action will deactivate the stokvel and cannot be undone. 
+                  All data will be preserved but the stokvel will no longer be active.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Delete Stokvel
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardContent>
+      </Card>
     </div>
   )
 }

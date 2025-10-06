@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Check, X, Filter, FileText } from 'lucide-react'
+import { Plus, Check, X, Filter, FileText, Upload } from 'lucide-react'
 import { useContributions, useCreateContribution, useUpdateContribution, useDeleteContribution } from '../hooks/useContributions'
 import { useMembers } from '../hooks/useMembers'
 import { Button } from '../components/ui/button'
@@ -16,6 +16,7 @@ interface ContributionFormData {
   amount: number
   date_paid: string
   proof_of_payment?: string
+  proof_file?: File
 }
 
 const initialFormData: ContributionFormData = {
@@ -41,14 +42,40 @@ export const Contributions = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Validate that either proof_of_payment URL or proof_file is provided
+    if (!formData.proof_of_payment && !formData.proof_file) {
+      alert('Please provide proof of payment either as a URL or by uploading a file.')
+      return
+    }
+    
     try {
+      let proofUrl = formData.proof_of_payment
+      
+      // If a file is uploaded, you would typically upload it to a cloud storage service here
+      // For now, we'll use a placeholder URL or the actual URL if provided
+      if (formData.proof_file && !proofUrl) {
+        // In a real implementation, you would upload the file to cloud storage (e.g., AWS S3, Cloudinary)
+        // and get back a URL. For now, we'll create a temporary object URL
+        proofUrl = URL.createObjectURL(formData.proof_file)
+        console.log('File selected:', formData.proof_file.name)
+        console.log('Note: In production, this file should be uploaded to cloud storage')
+      }
+      
+      const submitData = {
+        member_id: formData.member_id,
+        month: formData.month,
+        amount: formData.amount,
+        date_paid: formData.date_paid,
+        proof_of_payment: proofUrl,
+      }
+      
       if (editingContribution) {
         await updateContribution.mutateAsync({
           id: editingContribution.id,
-          ...formData,
+          ...submitData,
         })
       } else {
-        await createContribution.mutateAsync(formData)
+        await createContribution.mutateAsync(submitData)
       }
       
       setShowForm(false)
@@ -88,6 +115,11 @@ export const Contributions = () => {
     setShowForm(false)
     setEditingContribution(null)
     setFormData(initialFormData)
+    // Clear any file input
+    const fileInput = document.getElementById('proof_file') as HTMLInputElement
+    if (fileInput) {
+      fileInput.value = ''
+    }
   }
 
   const getStatusColor = (verified: boolean) => {
@@ -202,18 +234,70 @@ export const Contributions = () => {
                     required
                   />
                 </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="proof_of_payment">Proof of Payment (URL)</Label>
-                  <Input
-                    id="proof_of_payment"
-                    placeholder="URL to proof of payment document"
-                    value={formData.proof_of_payment}
-                    onChange={(e) => setFormData({ ...formData, proof_of_payment: e.target.value })}
-                  />
+                <div className="space-y-4 md:col-span-2">
+                  <Label className="text-base font-medium">Proof of Payment *</Label>
+                  <p className="text-sm text-gray-600">
+                    Please provide proof of payment by either uploading a file or providing a URL
+                  </p>
+                  
+                  {/* File Upload Option */}
+                  <div className="space-y-2">
+                    <Label htmlFor="proof_file" className="text-sm">Upload File (PDF, JPG, PNG)</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="proof_file"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          setFormData({ ...formData, proof_file: file })
+                        }}
+                        className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                      />
+                      {formData.proof_file && (
+                        <div className="flex items-center text-green-600">
+                          <Upload className="h-4 w-4 mr-1" />
+                          <span className="text-sm">{formData.proof_file.name}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* URL Option */}
+                  <div className="space-y-2">
+                    <Label htmlFor="proof_of_payment" className="text-sm">Or provide URL</Label>
+                    <Input
+                      id="proof_of_payment"
+                      placeholder="URL to proof of payment document"
+                      value={formData.proof_of_payment}
+                      onChange={(e) => setFormData({ ...formData, proof_of_payment: e.target.value })}
+                    />
+                  </div>
+
+                  {/* Validation Message */}
+                  {!formData.proof_of_payment && !formData.proof_file && (
+                    <p className="text-sm text-red-600 flex items-center">
+                      <X className="h-4 w-4 mr-1" />
+                      Proof of payment is required
+                    </p>
+                  )}
+                  {(formData.proof_of_payment || formData.proof_file) && (
+                    <p className="text-sm text-green-600 flex items-center">
+                      <Check className="h-4 w-4 mr-1" />
+                      Proof of payment provided
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button type="submit" disabled={createContribution.isPending || updateContribution.isPending}>
+                <Button 
+                  type="submit" 
+                  disabled={
+                    createContribution.isPending || 
+                    updateContribution.isPending || 
+                    (!formData.proof_of_payment && !formData.proof_file)
+                  }
+                >
                   {createContribution.isPending || updateContribution.isPending ? 'Saving...' : 'Save'}
                 </Button>
                 <Button type="button" variant="outline" onClick={handleCancel}>

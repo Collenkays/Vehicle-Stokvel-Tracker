@@ -8,6 +8,9 @@ import { Contributions } from './pages/Contributions'
 import { Payouts } from './pages/Payouts'
 import { Reports } from './pages/Reports'
 import { Settings } from './pages/Settings'
+import { MyStokvels } from './pages/MyStokvels'
+import { StokvelTypeCatalog } from './pages/StokvelTypeCatalog'
+import { CreateStokvelWizard } from './components/CreateStokvelWizard'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 function App() {
@@ -15,6 +18,34 @@ function App() {
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
+        
+        {/* Multi-stokvel routes (full-screen, no layout) */}
+        <Route
+          path="/my-stokvels"
+          element={
+            <ProtectedRoute>
+              <MyStokvels />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/browse-stokvel-types"
+          element={
+            <ProtectedRoute>
+              <StokvelTypeCatalog />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/create-stokvel"
+          element={
+            <ProtectedRoute>
+              <CreateStokvelWizard />
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* Legacy single-stokvel routes (with layout) */}
         <Route
           path="/*"
           element={
@@ -27,6 +58,14 @@ function App() {
                   <Route path="/payouts" element={<Payouts />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/settings" element={<Settings />} />
+                  
+                  {/* Stokvel-specific routes */}
+                  <Route path="/stokvel/:stokvelId/dashboard" element={<Dashboard />} />
+                  <Route path="/stokvel/:stokvelId/members" element={<Members />} />
+                  <Route path="/stokvel/:stokvelId/contributions" element={<Contributions />} />
+                  <Route path="/stokvel/:stokvelId/payouts" element={<Payouts />} />
+                  <Route path="/stokvel/:stokvelId/reports" element={<Reports />} />
+                  <Route path="/stokvel/:stokvelId/settings" element={<Settings />} />
                 </Routes>
               </Layout>
             </ProtectedRoute>

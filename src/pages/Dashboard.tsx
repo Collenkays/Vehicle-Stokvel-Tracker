@@ -1,14 +1,19 @@
-import { Users, CreditCard, Car, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
+import { CreditCard, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
+import { useParams } from 'react-router-dom'
 import { useDashboardStats, useMonthlyContributionTrends, usePayoutHistory } from '../hooks/useDashboard'
+import { useUserStokvel } from '../hooks/useUserStokvels'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { formatCurrency } from '../utils/currency'
 import { formatDate } from '../utils/date'
+import { getStokvelCardContent, getStokvelTypeDisplayName } from '../utils/stokvelCardContent'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
 
 export const Dashboard = () => {
-  const { data: stats, isLoading: statsLoading } = useDashboardStats()
-  const { data: monthlyTrends, isLoading: trendsLoading } = useMonthlyContributionTrends()
-  const { data: payoutHistory, isLoading: payoutLoading } = usePayoutHistory()
+  const { stokvelId } = useParams<{ stokvelId?: string }>()
+  const { data: stokvel } = useUserStokvel(stokvelId || '')
+  const { data: stats, isLoading: statsLoading } = useDashboardStats(stokvelId)
+  const { data: monthlyTrends, isLoading: trendsLoading } = useMonthlyContributionTrends(stokvelId)
+  const { data: payoutHistory, isLoading: payoutLoading } = usePayoutHistory(stokvelId)
 
   if (statsLoading) {
     return (
@@ -18,14 +23,28 @@ export const Dashboard = () => {
     )
   }
 
-  const progressToTarget = stats ? (stats.totalBalance / 100000) * 100 : 0
-  const isTargetReached = stats ? stats.totalBalance >= 100000 : false
+  // Use stokvel's target amount or fallback to 100000 for legacy/no stokvel
+  const targetAmount = stokvel?.target_amount || 100000
+  const progressToTarget = stats ? (stats.totalBalance / targetAmount) * 100 : 0
+  const isTargetReached = stats ? stats.totalBalance >= targetAmount : false
+
+  // Get dynamic card content based on stokvel type
+  const cardContent = getStokvelCardContent(stokvel?.rules)
+  const stokvelTypeDisplayName = getStokvelTypeDisplayName(stokvel?.rules)
+  
+  // Extract icon components for JSX
+  const PendingMembersIcon = cardContent.pendingMembersIcon
+  const CompletedPayoutsIcon = cardContent.completedPayoutsIcon
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">Overview of your stokvel performance</p>
+        <h1 className="text-3xl font-bold text-gray-900">
+          {stokvel ? `${stokvel.name} Dashboard` : 'Dashboard'}
+        </h1>
+        <p className="text-gray-600">
+          {stokvel ? `Overview of your ${stokvelTypeDisplayName} performance` : 'Overview of your stokvel performance'}
+        </p>
       </div>
 
       {/* Stats Cards */}
@@ -52,9 +71,11 @@ export const Dashboard = () => {
                 {progressToTarget.toFixed(1)}%
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Target: {formatCurrency(100000)}
-            </p>
+            {targetAmount && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Target: {formatCurrency(targetAmount)}
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -75,30 +96,30 @@ export const Dashboard = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Members Without Vehicle</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">{cardContent.pendingMembersLabel}</CardTitle>
+            <PendingMembersIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {stats ? stats.membersWithoutVehicle : 'Loading...'}
             </div>
             <p className="text-xs text-muted-foreground">
-              Awaiting payout
+              {cardContent.pendingMembersDescription}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Payouts</CardTitle>
-            <Car className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">{cardContent.completedPayoutsLabel}</CardTitle>
+            <CompletedPayoutsIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {stats ? stats.completedPayouts : 'Loading...'}
             </div>
             <p className="text-xs text-muted-foreground">
-              Vehicles distributed
+              {cardContent.completedPayoutsDescription}
             </p>
           </CardContent>
         </Card>
@@ -115,7 +136,7 @@ export const Dashboard = () => {
                 <AlertCircle className="h-5 w-5" />
               )}
               <span>
-                {isTargetReached ? 'Payout Ready!' : 'Next Payout Recipient'}
+                {isTargetReached ? 'Payout Ready!' : cardContent.nextPayoutDescription}
               </span>
             </CardTitle>
           </CardHeader>
@@ -136,13 +157,13 @@ export const Dashboard = () => {
                 {isTargetReached ? (
                   <div>
                     <p className="text-sm">Ready for payout</p>
-                    <p className="font-semibold">{formatCurrency(100000)}</p>
+                    <p className="font-semibold">{formatCurrency(targetAmount)}</p>
                   </div>
                 ) : (
                   <div>
                     <p className="text-sm">Still needed</p>
                     <p className="font-semibold">
-                      {formatCurrency(100000 - stats.totalBalance)}
+                      {formatCurrency(targetAmount - stats.totalBalance)}
                     </p>
                   </div>
                 )}
@@ -218,7 +239,7 @@ export const Dashboard = () => {
           <CardHeader>
             <CardTitle>Payout History</CardTitle>
             <CardDescription>
-              Recent vehicle distributions
+              Recent {cardContent.distributionUnit}s
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -254,8 +275,8 @@ export const Dashboard = () => {
             ) : (
               <div className="h-80 flex items-center justify-center text-gray-500">
                 <div className="text-center">
-                  <Car className="h-8 w-8 mx-auto mb-2" />
-                  <p>No payouts completed yet</p>
+                  <CompletedPayoutsIcon className="h-8 w-8 mx-auto mb-2" />
+                  <p>No {cardContent.distributionUnit}s completed yet</p>
                 </div>
               </div>
             )}

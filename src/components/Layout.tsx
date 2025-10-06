@@ -1,7 +1,8 @@
 import { ReactNode } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { Button } from './ui/button'
+import { Badge } from './ui/badge'
 import { 
   Home, 
   Users, 
@@ -10,27 +11,43 @@ import {
   FileText, 
   Settings, 
   LogOut,
-  Menu
+  Menu,
+  ChevronDown,
+  Plus,
+  Grid3X3
 } from 'lucide-react'
 import { useState } from 'react'
+import { useUserStokvel } from '../hooks/useUserStokvels'
 
 interface LayoutProps {
   children: ReactNode
 }
 
-const navigation = [
-  { name: 'Dashboard', href: '/', icon: Home },
-  { name: 'Members', href: '/members', icon: Users },
-  { name: 'Contributions', href: '/contributions', icon: CreditCard },
-  { name: 'Payouts', href: '/payouts', icon: Banknote },
-  { name: 'Reports', href: '/reports', icon: FileText },
-  { name: 'Settings', href: '/settings', icon: Settings },
-]
-
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, signOut } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
+  const params = useParams()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [stokvelDropdownOpen, setStokvelDropdownOpen] = useState(false)
+  
+  const stokvelId = params.stokvelId
+  const { data: currentStokvel } = useUserStokvel(stokvelId || '')
+  
+  // Navigation items that adjust based on whether we're in a specific stokvel context
+  const getNavigation = () => {
+    const baseHref = stokvelId ? `/stokvel/${stokvelId}` : ''
+    return [
+      { name: 'Dashboard', href: stokvelId ? `${baseHref}/dashboard` : '/', icon: Home },
+      { name: 'Members', href: `${baseHref}/members`, icon: Users },
+      { name: 'Contributions', href: `${baseHref}/contributions`, icon: CreditCard },
+      { name: 'Payouts', href: `${baseHref}/payouts`, icon: Banknote },
+      { name: 'Reports', href: `${baseHref}/reports`, icon: FileText },
+      { name: 'Settings', href: `${baseHref}/settings`, icon: Settings },
+    ]
+  }
+  
+  const navigation = getNavigation()
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -50,8 +67,65 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </Button>
           </div>
           <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
-            <div className="flex-shrink-0 flex items-center px-4">
-              <h1 className="text-xl font-bold text-gray-900">Vehicle Stokvel</h1>
+            <div className="flex-shrink-0 px-4">
+              {/* Stokvel Selector */}
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  onClick={() => setStokvelDropdownOpen(!stokvelDropdownOpen)}
+                  className="w-full justify-between mb-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    {currentStokvel ? (
+                      <>
+                        <span>{currentStokvel.stokvel_type?.icon}</span>
+                        <span className="truncate">{currentStokvel.name}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Grid3X3 className="h-4 w-4" />
+                        <span>Select Stokvel</span>
+                      </>
+                    )}
+                  </div>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+                
+                {stokvelDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          navigate('/my-stokvels')
+                          setStokvelDropdownOpen(false)
+                          setSidebarOpen(false)
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <Grid3X3 className="h-4 w-4 inline mr-2" />
+                        All Stokvels
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigate('/create-stokvel')
+                          setStokvelDropdownOpen(false)
+                          setSidebarOpen(false)
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <Plus className="h-4 w-4 inline mr-2" />
+                        Create New Stokvel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center">
+                <h1 className="text-lg font-semibold text-gray-900">
+                  {currentStokvel ? currentStokvel.name : 'My Stokvels'}
+                </h1>
+              </div>
             </div>
             <nav className="mt-5 px-2 space-y-1">
               {navigation.map((item) => {
@@ -100,8 +174,66 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
         <div className="flex-1 flex flex-col min-h-0 border-r border-gray-200 bg-white">
           <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-            <div className="flex items-center flex-shrink-0 px-4">
-              <h1 className="text-xl font-bold text-gray-900">Vehicle Stokvel</h1>
+            <div className="flex-shrink-0 px-4">
+              {/* Stokvel Selector */}
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  onClick={() => setStokvelDropdownOpen(!stokvelDropdownOpen)}
+                  className="w-full justify-between mb-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    {currentStokvel ? (
+                      <>
+                        <span>{currentStokvel.stokvel_type?.icon}</span>
+                        <span className="truncate">{currentStokvel.name}</span>
+                        <Badge variant="secondary" className="text-xs">
+                          {currentStokvel.stokvel_type?.name}
+                        </Badge>
+                      </>
+                    ) : (
+                      <>
+                        <Grid3X3 className="h-4 w-4" />
+                        <span>Select Stokvel</span>
+                      </>
+                    )}
+                  </div>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+                
+                {stokvelDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          navigate('/my-stokvels')
+                          setStokvelDropdownOpen(false)
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <Grid3X3 className="h-4 w-4 inline mr-2" />
+                        All Stokvels
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigate('/create-stokvel')
+                          setStokvelDropdownOpen(false)
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <Plus className="h-4 w-4 inline mr-2" />
+                        Create New Stokvel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center">
+                <h1 className="text-lg font-semibold text-gray-900">
+                  {currentStokvel ? currentStokvel.name : 'My Stokvels'}
+                </h1>
+              </div>
             </div>
             <nav className="mt-5 flex-1 px-2 bg-white space-y-1">
               {navigation.map((item) => {
@@ -156,7 +288,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             >
               <Menu className="h-6 w-6" />
             </Button>
-            <h1 className="text-lg font-semibold">Vehicle Stokvel</h1>
+            <h1 className="text-lg font-semibold">{currentStokvel ? currentStokvel.name : 'My Stokvels'}</h1>
             <div></div>
           </div>
         </div>

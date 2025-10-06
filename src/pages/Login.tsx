@@ -9,25 +9,66 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 export const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const { signIn } = useAuth()
+  const [success, setSuccess] = useState('')
+  const [isSignUp, setIsSignUp] = useState(false)
+  const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setSuccess('')
 
-    const { error } = await signIn(email, password)
-    
-    if (error) {
-      setError(error.message)
+    if (isSignUp) {
+      // Sign up validation
+      if (password !== confirmPassword) {
+        setError('Passwords do not match')
+        setLoading(false)
+        return
+      }
+      
+      if (password.length < 6) {
+        setError('Password must be at least 6 characters')
+        setLoading(false)
+        return
+      }
+
+      const { error } = await signUp(email, password)
+      
+      if (error) {
+        setError(error.message)
+      } else {
+        setSuccess('Account created successfully! Please check your email to verify your account, then sign in.')
+        setIsSignUp(false)
+        setEmail('')
+        setPassword('')
+        setConfirmPassword('')
+      }
     } else {
-      navigate('/')
+      // Sign in
+      const { error } = await signIn(email, password)
+      
+      if (error) {
+        setError(error.message)
+      } else {
+        navigate('/')
+      }
     }
     
     setLoading(false)
+  }
+
+  const toggleMode = () => {
+    setIsSignUp(!isSignUp)
+    setError('')
+    setSuccess('')
+    setEmail('')
+    setPassword('')
+    setConfirmPassword('')
   }
 
   return (
@@ -36,7 +77,10 @@ export const Login = () => {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl text-center">Vehicle Stokvel Tracker</CardTitle>
           <CardDescription className="text-center">
-            Sign in to manage your stokvel contributions
+            {isSignUp 
+              ? 'Create an account to join your stokvel' 
+              : 'Sign in to manage your stokvel contributions'
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -57,19 +101,52 @@ export const Login = () => {
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder={isSignUp ? "Create a password (min 6 characters)" : "Enter your password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={isSignUp ? 6 : undefined}
               />
             </div>
+            {isSignUp && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
+            )}
             {error && (
               <div className="text-red-500 text-sm text-center">{error}</div>
             )}
+            {success && (
+              <div className="text-green-600 text-sm text-center">{success}</div>
+            )}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading 
+                ? (isSignUp ? 'Creating Account...' : 'Signing in...') 
+                : (isSignUp ? 'Create Account' : 'Sign In')
+              }
             </Button>
           </form>
+          
+          <div className="mt-4 text-center">
+            <Button 
+              variant="link" 
+              onClick={toggleMode}
+              className="text-sm"
+            >
+              {isSignUp 
+                ? 'Already have an account? Sign in' 
+                : "Don't have an account? Sign up"
+              }
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
