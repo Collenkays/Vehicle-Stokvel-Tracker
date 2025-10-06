@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
-import { DashboardStats, Member } from '../types'
+import { DashboardStats } from '../types'
 
 export const useDashboardStats = (stokvelId?: string) => {
   return useQuery({

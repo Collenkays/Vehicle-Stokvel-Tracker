@@ -8,23 +8,11 @@ export type Json =
 
 export type Database = {
   public: {
-    Tables: {
-      members: {
-        Row: Record<string, any>
-        Insert: Record<string, any>
-        Update: Record<string, any>
-      }
-      contributions: {
-        Row: Record<string, any>
-        Insert: Record<string, any>
-        Update: Record<string, any>
-      }
-      payouts: {
-        Row: Record<string, any>
-        Insert: Record<string, any>
-        Update: Record<string, any>
-      }
-    }
+    Tables: Record<string, {
+      Row: Record<string, any>
+      Insert: Record<string, any>
+      Update: Record<string, any>
+    }>
     Views: {
       [key: string]: never
     }

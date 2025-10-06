@@ -66,7 +66,7 @@ export const CreateStokvelWizard = () => {
       ...prev,
       stokvel_type_id: type.id,
       rules: type.rules_template,
-      target_amount: type.rules_template.target_amount,
+      target_amount: type.rules_template.target_amount ?? undefined,
     }))
   }
 

@@ -56,7 +56,7 @@ const MembershipCard = ({ stokvel, summary, onView, onSettings }: MembershipCard
               <CardTitle className="text-lg flex items-center gap-2">
                 {stokvel.name}
                 {stokvel.membership_role === 'admin' && (
-                  <Crown className="h-4 w-4 text-yellow-500" title="Admin" />
+                  <Crown className="h-4 w-4 text-yellow-500" />
                 )}
               </CardTitle>
               <CardDescription className="text-sm">
