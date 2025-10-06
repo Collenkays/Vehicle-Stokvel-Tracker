@@ -244,7 +244,7 @@ export const MyStokvels = () => {
     navigate(`/stokvel/${stokvelId}/dashboard`)
   }
 
-  const handleDeleteStokvel = async (stokvelId: string, stokvelName: string) => {
+  const handleDeleteStokvel = async (stokvelId: string, _stokvelName: string) => {
     try {
       await deleteStokvel.mutateAsync(stokvelId)
       // Success feedback would be handled by the mutation onSuccess

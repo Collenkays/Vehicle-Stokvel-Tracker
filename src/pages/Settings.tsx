@@ -6,9 +6,7 @@ import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
-import { supabase } from '../lib/supabase'
 import { useUserStokvel, useUpdateStokvel, useDeleteStokvel } from '../hooks/useUserStokvels'
-import { StokvelWithType } from '../types/multi-stokvel'
 import { formatCurrency } from '../utils/currency'
 import {
   AlertDialog,

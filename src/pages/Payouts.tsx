@@ -4,7 +4,6 @@ import { usePayouts, useGeneratePayout, useCompletePayout, useDeletePayout } fro
 import { useNextPayoutRecipient } from '../hooks/useMembers'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
-import { Payout } from '../types'
 import { formatCurrency } from '../utils/currency'
 import { formatDate } from '../utils/date'
 

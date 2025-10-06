@@ -8,7 +8,7 @@ import { Label } from '../components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Contribution } from '../types'
 import { formatCurrency } from '../utils/currency'
-import { formatDate, getCurrentMonth, getMonthKey } from '../utils/date'
+import { formatDate, getCurrentMonth } from '../utils/date'
 
 interface ContributionFormData {
   member_id: string
