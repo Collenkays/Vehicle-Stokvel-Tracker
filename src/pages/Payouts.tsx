@@ -3,7 +3,7 @@ import { Car, AlertCircle, CheckCircle, Plus, Calendar } from 'lucide-react'
 import { usePayouts, useGeneratePayout, useCompletePayout, useDeletePayout } from '../hooks/usePayouts'
 import { useNextPayoutRecipient } from '../hooks/useMembers'
 import { Button } from '../components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { formatCurrency } from '../utils/currency'
 import { formatDate } from '../utils/date'
 

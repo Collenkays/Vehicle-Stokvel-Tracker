@@ -192,12 +192,16 @@ export const useUserStokvelMemberships = () => {
       if (error) throw error
       
       // Transform the data to match StokvelWithType structure
-      return data?.map(membership => ({
-        ...membership.user_stokvels,
-        membership_role: membership.role,
-        membership_rotation_order: membership.rotation_order,
-        membership_join_date: membership.join_date
-      })) || []
+      return (data || []).map((membership: any) => {
+        const base = membership.user_stokvels
+        const stokvel = Array.isArray(base) ? base[0] : base
+        return {
+          ...(stokvel || {}),
+          membership_role: membership.role,
+          membership_rotation_order: membership.rotation_order,
+          membership_join_date: membership.join_date,
+        } as StokvelWithType
+      })
     },
   })
 }

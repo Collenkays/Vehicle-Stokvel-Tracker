@@ -326,7 +326,7 @@ export class StokvelLogicEngine {
 
   // Payout calculation methods
   private static calculateCashPayout(
-    stokvel: UserStokvel,
+    _stokvel: UserStokvel,
     currentBalance: number,
     members: StokvelMember[],
     targetMember?: StokvelMember
@@ -349,7 +349,7 @@ export class StokvelLogicEngine {
         type: 'cash',
         distribution_method: 'equal',
         rollover_balance: currentBalance - (perMemberAmount * activeMembers.length),
-        notes: `Equal distribution of ${stokvel.currency} ${perMemberAmount.toLocaleString()} per member`
+        notes: `Equal distribution per member`
       }
     }
   }
