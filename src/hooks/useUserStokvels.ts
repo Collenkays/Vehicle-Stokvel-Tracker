@@ -171,37 +171,67 @@ export const useUserStokvelMemberships = () => {
       const { data: user } = await supabase.auth.getUser()
       if (!user.user) throw new Error('Not authenticated')
 
-      const { data, error } = await supabase
+      console.log('🔍 Fetching memberships for user:', user.user.id, user.user.email)
+
+      // First, get the membership records
+      const { data: memberships, error: memberError } = await supabase
         .from('user_stokvel_members')
-        .select(`
-          stokvel_id,
-          role,
-          rotation_order,
-          is_active,
-          join_date,
-          user_stokvels!inner(
-            *,
-            stokvel_type:stokvel_types(*)
-          )
-        `)
+        .select('stokvel_id, role, rotation_order, is_active, join_date')
         .eq('member_id', user.user.id)
         .eq('is_active', true)
-        .eq('user_stokvels.is_active', true)
         .order('join_date', { ascending: false })
 
-      if (error) throw error
-      
-      // Transform the data to match StokvelWithType structure
-      return (data || []).map((membership: any) => {
-        const base = membership.user_stokvels
-        const stokvel = Array.isArray(base) ? base[0] : base
-        return {
-          ...(stokvel || {}),
-          membership_role: membership.role,
-          membership_rotation_order: membership.rotation_order,
-          membership_join_date: membership.join_date,
-        } as StokvelWithType
-      })
+      console.log('📊 Membership records:', { memberships, memberError })
+
+      if (memberError) {
+        console.error('❌ Error fetching memberships:', memberError)
+        throw memberError
+      }
+
+      if (!memberships || memberships.length === 0) {
+        console.log('⚠️ No memberships found')
+        return []
+      }
+
+      // Get the stokvel IDs
+      const stokvelIds = memberships.map(m => m.stokvel_id)
+      console.log('🔍 Fetching stokvels with IDs:', stokvelIds)
+
+      // Then fetch the stokvels separately
+      const { data: stokvels, error: stokvelError } = await supabase
+        .from('user_stokvels')
+        .select(`
+          *,
+          stokvel_type:stokvel_types(*)
+        `)
+        .in('id', stokvelIds)
+        .eq('is_active', true)
+
+      console.log('📊 Stokvel records:', { stokvels, stokvelError })
+
+      if (stokvelError) {
+        console.error('❌ Error fetching stokvels:', stokvelError)
+        throw stokvelError
+      }
+
+      // Combine the data
+      const result: StokvelWithType[] = memberships
+        .map(membership => {
+          const stokvel = stokvels?.find(s => s.id === membership.stokvel_id)
+          if (!stokvel) return null
+
+          return {
+            ...stokvel,
+            membership_role: membership.role,
+            membership_rotation_order: membership.rotation_order,
+            membership_join_date: membership.join_date,
+          } as StokvelWithType
+        })
+        .filter((s): s is StokvelWithType => s !== null)
+
+      console.log('✅ Transformed memberships:', result)
+
+      return result
     },
   })
 }

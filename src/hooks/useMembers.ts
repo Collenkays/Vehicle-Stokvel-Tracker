@@ -160,28 +160,18 @@ export const useAddStokvelMember = () => {
 
       let member_id = generateTempUUID()
 
+      // Try to use the RPC function first
       try {
-        // Check if user exists in auth.users by email
-        const { data: authUsers } = await supabase.rpc('get_user_id_by_email', { user_email: memberData.email })
-        if (authUsers) {
-          member_id = authUsers
+        const { data: authUserId, error: rpcError } = await supabase.rpc('get_user_id_by_email', {
+          user_email: memberData.email
+        })
+
+        if (!rpcError && authUserId) {
+          member_id = authUserId
+          console.log('Found user via RPC:', member_id, 'for email:', memberData.email)
         }
       } catch (err) {
-        // If the function doesn't exist or fails, try the profiles table
-        try {
-          const { data: existingUser } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('email', memberData.email)
-            .maybeSingle()
-
-          if (existingUser?.id) {
-            member_id = existingUser.id
-          }
-        } catch (profileErr) {
-          // If profiles table doesn't exist, just use temp UUID
-          console.log('Could not check for existing user, using temp UUID')
-        }
+        console.log('RPC function not available, will use temp UUID')
       }
 
       console.log('Adding member with ID:', member_id, 'for email:', memberData.email)
@@ -211,6 +201,7 @@ export const useAddStokvelMember = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['stokvel-members', data.stokvel_id] })
       queryClient.invalidateQueries({ queryKey: ['stokvel-summaries'] })
+      queryClient.invalidateQueries({ queryKey: ['user-stokvel-memberships'] })
     },
   })
 }
