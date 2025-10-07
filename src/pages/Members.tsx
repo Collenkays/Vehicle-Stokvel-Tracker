@@ -343,43 +343,49 @@ const StokvelMembersManagement = () => {
         </Card>
       )}
 
-      <div className="grid gap-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {members?.map((member) => (
-          <Card key={member.id} className="hover:shadow-md transition-shadow">
+          <Card key={member.id} className="hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="bg-primary/10 p-2 rounded-full">
-                    {member.vehicle_received ? (
-                      <Car className="h-6 w-6 text-green-600" />
-                    ) : (
-                      <span className="h-6 w-6 flex items-center justify-center text-sm font-semibold text-primary">
-                        {member.rotation_order}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {member.full_name}
-                    </h3>
-                    <p className="text-gray-600">{member.email}</p>
-                    <p className="text-sm text-gray-500">
-                      Joined: {formatDate(member.join_date)} • Order: {member.rotation_order}
-                    </p>
-                    {member.vehicle_received && member.month_received && (
-                      <p className="text-sm text-green-600 font-medium">
-                        Vehicle received in {member.month_received}
-                      </p>
-                    )}
-                  </div>
+              <div className="flex flex-col items-center text-center space-y-4">
+                {/* Avatar/Icon Section */}
+                <div className="bg-primary/10 p-4 rounded-full">
+                  {member.vehicle_received ? (
+                    <Car className="h-8 w-8 text-green-600" />
+                  ) : (
+                    <span className="h-8 w-8 flex items-center justify-center text-lg font-bold text-primary">
+                      {member.rotation_order}
+                    </span>
+                  )}
                 </div>
-                <div className="flex items-center space-x-2">
+
+                {/* Member Info */}
+                <div className="space-y-2 w-full">
+                  <h3 className="text-lg font-semibold text-gray-900 break-words">
+                    {member.full_name}
+                  </h3>
+                  <p className="text-sm text-gray-600 break-all">{member.email}</p>
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <p>Joined: {formatDate(member.join_date)}</p>
+                    <p>Rotation Order: #{member.rotation_order}</p>
+                  </div>
+                  {member.vehicle_received && member.month_received && (
+                    <Badge variant="default" className="bg-green-600">
+                      Vehicle received - {member.month_received}
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 w-full pt-2">
                   <Button
                     variant="outline"
                     size="sm"
+                    className="flex-1"
                     onClick={() => handleEdit(member)}
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
                   </Button>
                   <Button
                     variant="outline"
