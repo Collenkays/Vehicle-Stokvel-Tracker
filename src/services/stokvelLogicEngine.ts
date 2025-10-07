@@ -16,6 +16,24 @@ export interface PayoutCalculation {
   notes: string
 }
 
+export interface FairnessCalculationResult {
+  member_id: string
+  member_name: string
+  total_paid: number
+  month_received: number
+  net_position: number
+  adjustment: number
+}
+
+export interface FairnessSummary {
+  total_pool_collected: number
+  total_vehicles_distributed: number
+  average_net_position: number
+  leftover_pot: number
+  member_calculations: FairnessCalculationResult[]
+  cycle_complete: boolean
+}
+
 export class StokvelLogicEngine {
   /**
    * Determines if a payout should be triggered based on stokvel rules
@@ -454,5 +472,134 @@ export class StokvelLogicEngine {
     const payoutMonth = rules.payout_month || 'December'
     const payoutMonthNum = new Date(`${payoutMonth} 1, 2000`).getMonth() + 1
     return monthNum === payoutMonthNum
+  }
+
+  /**
+   * Calculates fairness adjustments for all members after cycle completion
+   * Formula: adjustment = average_net_position - member_net_position
+   * Where net_position = 100,000 - total_paid
+   */
+  static calculateFairness(
+    members: StokvelMember[],
+    contributions: StokvelContribution[],
+    vehicleAmount: number = 100000
+  ): FairnessSummary {
+    const memberCalculations: FairnessCalculationResult[] = []
+    let totalPaidSum = 0
+
+    // Calculate total paid for each member
+    members.forEach(member => {
+      const memberContributions = contributions.filter(
+        c => c.member_id === member.id && c.verified
+      )
+      const totalPaid = memberContributions.reduce((sum, c) => sum + c.amount, 0)
+
+      // Extract month number from month_received (format: "YYYY-MM" or just number)
+      const monthReceived = member.month_received
+        ? (typeof member.month_received === 'string' && member.month_received.includes('-')
+          ? parseInt(member.month_received.split('-')[1])
+          : parseInt(member.month_received))
+        : 0
+
+      const netPosition = vehicleAmount - totalPaid
+
+      totalPaidSum += totalPaid
+
+      memberCalculations.push({
+        member_id: member.id,
+        member_name: member.full_name,
+        total_paid: totalPaid,
+        month_received: monthReceived,
+        net_position: netPosition,
+        adjustment: 0 // Will be calculated after we have average
+      })
+    })
+
+    // Calculate average net position
+    const averageNetPosition = memberCalculations.length > 0
+      ? memberCalculations.reduce((sum, m) => sum + m.net_position, 0) / memberCalculations.length
+      : 0
+
+    // Calculate adjustment for each member
+    memberCalculations.forEach(calc => {
+      calc.adjustment = averageNetPosition - calc.net_position
+    })
+
+    // Calculate leftover pot (total contributions - total vehicles distributed)
+    const totalVehiclesDistributed = members.filter(m => m.vehicle_received).length
+    const totalDistributed = totalVehiclesDistributed * vehicleAmount
+    const leftoverPot = totalPaidSum - totalDistributed
+
+    return {
+      total_pool_collected: totalPaidSum,
+      total_vehicles_distributed: totalVehiclesDistributed,
+      average_net_position: averageNetPosition,
+      leftover_pot: leftoverPot,
+      member_calculations: memberCalculations,
+      cycle_complete: members.every(m => m.vehicle_received)
+    }
+  }
+
+  /**
+   * Checks if fairness calculation should be triggered
+   * Triggers when all members have received their vehicles
+   */
+  static shouldTriggerFairnessCalculation(
+    members: StokvelMember[]
+  ): boolean {
+    const activeMembers = members.filter(m => m.is_active)
+    if (activeMembers.length === 0) return false
+
+    return activeMembers.every(member => member.vehicle_received)
+  }
+
+  /**
+   * Gets contribution amount based on member's vehicle receipt status
+   * Before receiving vehicle: initial_monthly_contribution
+   * After receiving vehicle: post_receipt_contribution
+   */
+  static getContributionAmount(
+    member: StokvelMember,
+    baseAmount: number,
+    postReceiptAmount: number = 8000
+  ): number {
+    if (member.vehicle_received) {
+      return postReceiptAmount
+    }
+    return baseAmount
+  }
+
+  /**
+   * Calculates expected contribution for a member in a given month
+   * Accounts for joining fee in first month and vehicle receipt status
+   */
+  static calculateExpectedContribution(
+    member: StokvelMember,
+    currentMonth: string,
+    stokvelStartDate: string,
+    monthlyContribution: number,
+    joiningFee: number = 1500,
+    postReceiptContribution: number = 8000
+  ): number {
+    // Check if this is the first month
+    const startDate = new Date(stokvelStartDate)
+    const currentDate = new Date(currentMonth + '-01')
+    const memberJoinDate = new Date(member.join_date)
+
+    const isFirstMonth =
+      currentDate.getFullYear() === startDate.getFullYear() &&
+      currentDate.getMonth() === startDate.getMonth() &&
+      memberJoinDate.getFullYear() === startDate.getFullYear() &&
+      memberJoinDate.getMonth() === startDate.getMonth()
+
+    // Calculate base amount
+    let expectedAmount = member.vehicle_received ? postReceiptContribution : monthlyContribution
+
+    // Add joining fee if first month
+    if (isFirstMonth) {
+      expectedAmount += joiningFee
+    }
+
+    return expectedAmount
   }
 }

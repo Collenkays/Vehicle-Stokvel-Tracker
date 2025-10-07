@@ -11,6 +11,7 @@ import { Settings } from './pages/Settings'
 import { MyStokvels } from './pages/MyStokvels'
 import { StokvelTypeCatalog } from './pages/StokvelTypeCatalog'
 import { CreateStokvelWizard } from './components/CreateStokvelWizard'
+import FairnessDashboard from './pages/FairnessDashboard'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 function App() {
@@ -20,14 +21,6 @@ function App() {
         <Route path="/login" element={<Login />} />
         
         {/* Multi-stokvel routes (full-screen, no layout) */}
-        <Route
-          path="/my-stokvels"
-          element={
-            <ProtectedRoute>
-              <MyStokvels />
-            </ProtectedRoute>
-          }
-        />
         <Route
           path="/browse-stokvel-types"
           element={
@@ -53,6 +46,7 @@ function App() {
               <Layout>
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
+                  <Route path="/my-stokvels" element={<MyStokvels />} />
                   <Route path="/members" element={<Members />} />
                   <Route path="/contributions" element={<Contributions />} />
                   <Route path="/payouts" element={<Payouts />} />
@@ -66,6 +60,7 @@ function App() {
                   <Route path="/stokvel/:stokvelId/payouts" element={<Payouts />} />
                   <Route path="/stokvel/:stokvelId/reports" element={<Reports />} />
                   <Route path="/stokvel/:stokvelId/settings" element={<Settings />} />
+                  <Route path="/stokvel/:stokvelId/fairness" element={<FairnessDashboard />} />
                 </Routes>
               </Layout>
             </ProtectedRoute>

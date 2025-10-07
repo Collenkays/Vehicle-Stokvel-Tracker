@@ -1,20 +1,43 @@
-import { useState } from 'react'
-import { Car, AlertCircle, CheckCircle, Plus, Calendar } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Car, AlertCircle, CheckCircle, Plus, Calendar, Calculator } from 'lucide-react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { usePayouts, useGeneratePayout, useCompletePayout, useDeletePayout } from '../hooks/usePayouts'
 import { useNextPayoutRecipient } from '../hooks/useMembers'
+import { supabase } from '../lib/supabase'
+import { StokvelMember } from '../types/multi-stokvel'
+import { StokvelLogicEngine } from '../services/StokvelLogicEngine'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { formatCurrency } from '../utils/currency'
 import { formatDate } from '../utils/date'
 
 export const Payouts = () => {
+  const { stokvelId } = useParams<{ stokvelId?: string }>()
+  const navigate = useNavigate()
   const [isGenerating, setIsGenerating] = useState(false)
-  
+  const [members, setMembers] = useState<StokvelMember[]>([])
+
   const { data: payouts, isLoading } = usePayouts()
   const { data: nextRecipient } = useNextPayoutRecipient()
   const generatePayout = useGeneratePayout()
   const completePayout = useCompletePayout()
   const deletePayout = useDeletePayout()
+
+  // Fetch members for the stokvel if stokvelId is provided
+  useEffect(() => {
+    if (stokvelId) {
+      supabase
+        .from('user_stokvel_members')
+        .select('*')
+        .eq('stokvel_id', stokvelId)
+        .then(({ data }) => {
+          if (data) setMembers(data)
+        })
+    }
+  }, [stokvelId])
+
+  // Check if fairness calculation should be triggered
+  const shouldShowFairnessAlert = members.length > 0 && StokvelLogicEngine.shouldTriggerFairnessCalculation(members)
 
   const handleGeneratePayout = async () => {
     if (!window.confirm('Are you sure you want to generate a new payout? This will create a payout for the next member in rotation.')) {
@@ -90,8 +113,39 @@ export const Payouts = () => {
         </Button>
       </div>
 
+      {/* Fairness Calculation Alert */}
+      {shouldShowFairnessAlert && stokvelId && (
+        <Card className="border-green-200 bg-green-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg text-green-900 flex items-center gap-2">
+              <CheckCircle className="h-5 w-5" />
+              Cycle Complete - Fairness Settlement Available
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-800 mb-2">
+                  All members have received their vehicles! You can now calculate and process fairness adjustments.
+                </p>
+                <p className="text-sm text-green-700">
+                  Fairness calculation ensures that members who contributed more (early recipients) receive compensation from those who contributed less (late recipients).
+                </p>
+              </div>
+              <Button
+                onClick={() => navigate(`/stokvel/${stokvelId}/fairness`)}
+                className="ml-4 flex items-center gap-2 bg-green-600 hover:bg-green-700"
+              >
+                <Calculator className="h-4 w-4" />
+                View Fairness Dashboard
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Next Recipient Card */}
-      {nextRecipient && (
+      {nextRecipient && !shouldShowFairnessAlert && (
         <Card className="border-blue-200 bg-blue-50">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg text-blue-900">Next Payout Recipient</CardTitle>
