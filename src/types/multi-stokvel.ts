@@ -116,6 +116,9 @@ export interface Database {
           contact_number: string | null
           vehicle_received: boolean
           month_received: string | null
+          total_paid: number
+          net_position: number
+          adjustment: number
           join_date: string
           is_active: boolean
           created_at: string
@@ -132,6 +135,9 @@ export interface Database {
           contact_number?: string | null
           vehicle_received?: boolean
           month_received?: string | null
+          total_paid?: number
+          net_position?: number
+          adjustment?: number
           join_date?: string
           is_active?: boolean
           created_at?: string
@@ -148,6 +154,9 @@ export interface Database {
           contact_number?: string | null
           vehicle_received?: boolean
           month_received?: string | null
+          total_paid?: number
+          net_position?: number
+          adjustment?: number
           join_date?: string
           is_active?: boolean
           created_at?: string

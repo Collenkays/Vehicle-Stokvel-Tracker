@@ -1,8 +1,9 @@
-import { CreditCard, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
-import { useParams } from 'react-router-dom'
+import { CreditCard, TrendingUp, AlertCircle, CheckCircle, Calculator } from 'lucide-react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useDashboardStats, useMonthlyContributionTrends, usePayoutHistory } from '../hooks/useDashboard'
 import { useUserStokvel } from '../hooks/useUserStokvels'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import { Button } from '../components/ui/button'
 import { formatCurrency } from '../utils/currency'
 import { formatDate } from '../utils/date'
 import { getStokvelCardContent, getStokvelTypeDisplayName } from '../utils/stokvelCardContent'
@@ -10,6 +11,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 export const Dashboard = () => {
   const { stokvelId } = useParams<{ stokvelId?: string }>()
+  const navigate = useNavigate()
   const { data: stokvel } = useUserStokvel(stokvelId || '')
   const { data: stats, isLoading: statsLoading } = useDashboardStats(stokvelId)
   const { data: monthlyTrends, isLoading: trendsLoading } = useMonthlyContributionTrends(stokvelId)
@@ -38,13 +40,25 @@ export const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">
-          {stokvel ? `${stokvel.name} Dashboard` : 'Dashboard'}
-        </h1>
-        <p className="text-gray-600">
-          {stokvel ? `Overview of your ${stokvelTypeDisplayName} performance` : 'Overview of your stokvel performance'}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {stokvel ? `${stokvel.name} Dashboard` : 'Dashboard'}
+          </h1>
+          <p className="text-gray-600">
+            {stokvel ? `Overview of your ${stokvelTypeDisplayName} performance` : 'Overview of your stokvel performance'}
+          </p>
+        </div>
+        {stokvelId && stokvel?.rules.distribution_type === 'vehicle' && (
+          <Button
+            onClick={() => navigate(`/stokvel/${stokvelId}/fairness`)}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Calculator className="h-4 w-4" />
+            Fairness Dashboard
+          </Button>
+        )}
       </div>
 
       {/* Stats Cards */}

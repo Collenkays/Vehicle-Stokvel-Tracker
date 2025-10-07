@@ -242,23 +242,38 @@ export const usePayoutHistory = (stokvelId?: string) => {
       }
 
       // Multi-stokvel implementation
-      const { data, error } = await supabase
+      // First get payouts
+      const { data: payoutsData, error: payoutsError } = await supabase
         .from('stokvel_payouts')
-        .select(`
-          *,
-          member:user_stokvel_members(full_name)
-        `)
+        .select('*')
         .eq('stokvel_id', stokvelId)
         .eq('status', 'completed')
         .order('created_at', { ascending: true })
 
-      if (error) throw error
+      if (payoutsError) throw payoutsError
 
-      return data.map(payout => ({
+      // If no payouts, return empty array
+      if (!payoutsData || payoutsData.length === 0) {
+        return []
+      }
+
+      // Then get member names
+      const memberIds = payoutsData.map(p => p.member_id)
+      const { data: membersData, error: membersError } = await supabase
+        .from('user_stokvel_members')
+        .select('id, full_name')
+        .in('id', memberIds)
+
+      if (membersError) throw membersError
+
+      // Create a map of member IDs to names
+      const memberMap = new Map(membersData?.map(m => [m.id, m.full_name]) || [])
+
+      return payoutsData.map(payout => ({
         month: payout.month_paid,
-        memberName: payout.member?.full_name || 'Unknown',
+        memberName: memberMap.get(payout.member_id) || 'Unknown',
         amount: payout.amount_paid,
-        vehicleValue: payout.vehicle_value,
+        vehicleValue: payout.amount_paid, // stokvel_payouts doesn't have vehicle_value, use amount_paid
         rolloverBalance: payout.rollover_balance,
         date: payout.created_at,
       }))
