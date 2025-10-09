@@ -13,10 +13,12 @@ import { StokvelTypeCatalog } from './pages/StokvelTypeCatalog'
 import { CreateStokvelWizard } from './components/CreateStokvelWizard'
 import FairnessDashboard from './pages/FairnessDashboard'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { InstallPrompt } from './components/InstallPrompt'
 
 function App() {
   return (
     <AuthProvider>
+      <InstallPrompt />
       <Routes>
         <Route path="/login" element={<Login />} />
         
