@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { Download, FileText, Calendar, DollarSign } from 'lucide-react'
 import { useContributions } from '../hooks/useContributions'
 import { usePayouts } from '../hooks/usePayouts'
-import { useMembers } from '../hooks/useMembers'
+import { useStokvelMembers } from '../hooks/useMembers'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -11,12 +12,13 @@ import { formatCurrency } from '../utils/currency'
 import { getCurrentMonth } from '../utils/date'
 
 export const Reports = () => {
+  const { stokvelId } = useParams<{ stokvelId: string }>()
   const [reportMonth, setReportMonth] = useState(getCurrentMonth())
-  
-  const { data: contributions } = useContributions(reportMonth)
-  const { data: allContributions } = useContributions()
-  const { data: payouts } = usePayouts()
-  const { data: members } = useMembers()
+
+  const { data: contributions } = useContributions(stokvelId, reportMonth)
+  const { data: allContributions } = useContributions(stokvelId)
+  const { data: payouts } = usePayouts(stokvelId)
+  const { data: members } = useStokvelMembers(stokvelId)
 
   const generateMonthlyReport = () => {
     if (!contributions || !members) return

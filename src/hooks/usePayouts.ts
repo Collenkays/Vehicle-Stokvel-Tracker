@@ -3,26 +3,33 @@ import { supabase } from '../lib/supabase'
 import { Payout } from '../types'
 import { Database } from '../types/supabase'
 
-type PayoutInsert = Database['public']['Tables']['payouts']['Insert']
-type PayoutUpdate = Database['public']['Tables']['payouts']['Update']
+type PayoutInsert = Database['public']['Tables']['stokvel_payouts']['Insert']
+type PayoutUpdate = Database['public']['Tables']['stokvel_payouts']['Update']
 
 const PAYOUTS_QUERY_KEY = ['payouts']
 
-export const usePayouts = () => {
+export const usePayouts = (stokvelId?: string) => {
   return useQuery({
-    queryKey: PAYOUTS_QUERY_KEY,
+    queryKey: stokvelId ? [...PAYOUTS_QUERY_KEY, stokvelId] : PAYOUTS_QUERY_KEY,
     queryFn: async (): Promise<Payout[]> => {
-      const { data, error } = await supabase
-        .from('payouts')
+      let query = supabase
+        .from('stokvel_payouts')
         .select(`
           *,
-          member:members(*)
+          member:user_stokvel_members(*)
         `)
         .order('created_at', { ascending: false })
+
+      if (stokvelId) {
+        query = query.eq('stokvel_id', stokvelId)
+      }
+
+      const { data, error } = await query
 
       if (error) throw error
       return data as Payout[]
     },
+    enabled: !!stokvelId,
   })
 }
 
@@ -31,10 +38,10 @@ export const usePayout = (id: string) => {
     queryKey: ['payout', id],
     queryFn: async (): Promise<Payout> => {
       const { data, error } = await supabase
-        .from('payouts')
+        .from('stokvel_payouts')
         .select(`
           *,
-          member:members(*)
+          member:user_stokvel_members(*)
         `)
         .eq('id', id)
         .single()
@@ -52,7 +59,7 @@ export const useCreatePayout = () => {
   return useMutation({
     mutationFn: async (payoutData: Omit<PayoutInsert, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
-        .from('payouts')
+        .from('stokvel_payouts')
         .insert(payoutData)
         .select()
         .single()
@@ -63,7 +70,7 @@ export const useCreatePayout = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PAYOUTS_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
-      queryClient.invalidateQueries({ queryKey: ['members'] })
+      queryClient.invalidateQueries({ queryKey: ['stokvel-members'] })
     },
   })
 }
@@ -74,7 +81,7 @@ export const useUpdatePayout = () => {
   return useMutation({
     mutationFn: async ({ id, ...updateData }: { id: string } & PayoutUpdate) => {
       const { data, error } = await supabase
-        .from('payouts')
+        .from('stokvel_payouts')
         .update(updateData)
         .eq('id', id)
         .select()
@@ -86,7 +93,7 @@ export const useUpdatePayout = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PAYOUTS_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
-      queryClient.invalidateQueries({ queryKey: ['members'] })
+      queryClient.invalidateQueries({ queryKey: ['stokvel-members'] })
     },
   })
 }
@@ -98,8 +105,8 @@ export const useCompletePayout = () => {
     mutationFn: async (payoutId: string) => {
       // Start a transaction to update both payout and member
       const { data: payout, error: payoutError } = await supabase
-        .from('payouts')
-        .select('member_id, month_paid')
+        .from('stokvel_payouts')
+        .select('member_id, month_paid, stokvel_id')
         .eq('id', payoutId)
         .single()
 
@@ -107,7 +114,7 @@ export const useCompletePayout = () => {
 
       // Update payout status
       const { error: updatePayoutError } = await supabase
-        .from('payouts')
+        .from('stokvel_payouts')
         .update({ status: 'completed' })
         .eq('id', payoutId)
 
@@ -115,8 +122,8 @@ export const useCompletePayout = () => {
 
       // Update member to mark vehicle as received
       const { error: updateMemberError } = await supabase
-        .from('members')
-        .update({ 
+        .from('user_stokvel_members')
+        .update({
           vehicle_received: true,
           month_received: payout.month_paid
         })
@@ -124,12 +131,12 @@ export const useCompletePayout = () => {
 
       if (updateMemberError) throw updateMemberError
 
-      return { success: true }
+      return { success: true, stokvel_id: payout.stokvel_id }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: PAYOUTS_QUERY_KEY })
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
-      queryClient.invalidateQueries({ queryKey: ['members'] })
+      queryClient.invalidateQueries({ queryKey: ['stokvel-members', data.stokvel_id] })
       queryClient.invalidateQueries({ queryKey: ['next-payout-recipient'] })
     },
   })
@@ -141,7 +148,7 @@ export const useDeletePayout = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('payouts')
+        .from('stokvel_payouts')
         .delete()
         .eq('id', id)
 
@@ -158,21 +165,23 @@ export const useGeneratePayout = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async () => {
-      // Get total balance from verified contributions
+    mutationFn: async (stokvelId: string) => {
+      // Get total balance from verified contributions for this stokvel
       const { data: contributions, error: contributionsError } = await supabase
-        .from('contributions')
+        .from('stokvel_contributions')
         .select('amount')
+        .eq('stokvel_id', stokvelId)
         .eq('verified', true)
 
       if (contributionsError) throw contributionsError
 
       const totalBalance = contributions.reduce((sum, contrib) => sum + contrib.amount, 0)
 
-      // Get completed payouts
+      // Get completed payouts for this stokvel
       const { data: completedPayouts, error: payoutsError } = await supabase
-        .from('payouts')
+        .from('stokvel_payouts')
         .select('amount_paid')
+        .eq('stokvel_id', stokvelId)
         .eq('status', 'completed')
 
       if (payoutsError) throw payoutsError
@@ -184,10 +193,11 @@ export const useGeneratePayout = () => {
         throw new Error(`Insufficient balance. Available: R${availableBalance.toFixed(2)}, Required: R100,000`)
       }
 
-      // Get next member in rotation
+      // Get next member in rotation for this stokvel
       const { data: nextMember, error: memberError } = await supabase
-        .from('members')
+        .from('user_stokvel_members')
         .select('*')
+        .eq('stokvel_id', stokvelId)
         .eq('vehicle_received', false)
         .order('rotation_order', { ascending: true })
         .limit(1)
@@ -203,8 +213,9 @@ export const useGeneratePayout = () => {
 
       // Create payout record
       const { data: payout, error: createError } = await supabase
-        .from('payouts')
+        .from('stokvel_payouts')
         .insert({
+          stokvel_id: stokvelId,
           member_id: member.id,
           month_paid: new Date().toLocaleDateString('en-ZA', { year: 'numeric', month: 'long' }),
           amount_paid: payoutAmount,

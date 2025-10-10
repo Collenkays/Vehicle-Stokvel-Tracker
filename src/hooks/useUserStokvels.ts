@@ -164,6 +164,7 @@ export const useDeleteStokvel = () => {
 }
 
 // Hook to get stokvels where current user is a member
+// Matches by member_id (UUID), email, and phone number
 export const useUserStokvelMemberships = () => {
   return useQuery({
     queryKey: ['user-stokvel-memberships'],
@@ -171,14 +172,22 @@ export const useUserStokvelMemberships = () => {
       const { data: user } = await supabase.auth.getUser()
       if (!user.user) throw new Error('Not authenticated')
 
-      console.log('🔍 Fetching memberships for user:', user.user.id, user.user.email)
+      const userEmail = user.user.email
+      const userPhone = user.user.user_metadata?.phone || user.user.user_metadata?.contact_number
 
-      // First, get the membership records
+      console.log('🔍 Fetching memberships for user:', {
+        id: user.user.id,
+        email: userEmail,
+        phone: userPhone
+      })
+
+      // Match by member_id OR email OR phone
+      // Note: Using ilike for case-insensitive email matching
       const { data: memberships, error: memberError } = await supabase
         .from('user_stokvel_members')
-        .select('stokvel_id, role, rotation_order, is_active, join_date')
-        .eq('member_id', user.user.id)
+        .select('stokvel_id, role, rotation_order, is_active, join_date, email, contact_number')
         .eq('is_active', true)
+        .or(`member_id.eq.${user.user.id},email.ilike.${userEmail}${userPhone ? `,contact_number.eq.${userPhone}` : ''}`)
         .order('join_date', { ascending: false })
 
       console.log('📊 Membership records:', { memberships, memberError })

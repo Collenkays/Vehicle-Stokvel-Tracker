@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { Plus, Check, X, Filter, FileText, Upload } from 'lucide-react'
 import { useContributions, useCreateContribution, useUpdateContribution, useDeleteContribution } from '../hooks/useContributions'
-import { useMembers } from '../hooks/useMembers'
+import { useStokvelMembers } from '../hooks/useMembers'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -28,29 +29,35 @@ const initialFormData: ContributionFormData = {
 }
 
 export const Contributions = () => {
+  const { stokvelId } = useParams<{ stokvelId: string }>()
   const [showForm, setShowForm] = useState(false)
   const [editingContribution, setEditingContribution] = useState<Contribution | null>(null)
   const [formData, setFormData] = useState<ContributionFormData>(initialFormData)
   const [filterMonth, setFilterMonth] = useState('')
 
-  const { data: contributions, isLoading } = useContributions(filterMonth)
-  const { data: members } = useMembers()
+  const { data: contributions, isLoading } = useContributions(stokvelId, filterMonth)
+  const { data: members } = useStokvelMembers(stokvelId)
   const createContribution = useCreateContribution()
   const updateContribution = useUpdateContribution()
   const deleteContribution = useDeleteContribution()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
+    if (!stokvelId) {
+      alert('No stokvel selected')
+      return
+    }
+
     // Validate that either proof_of_payment URL or proof_file is provided
     if (!formData.proof_of_payment && !formData.proof_file) {
       alert('Please provide proof of payment either as a URL or by uploading a file.')
       return
     }
-    
+
     try {
       let proofUrl = formData.proof_of_payment
-      
+
       // If a file is uploaded, you would typically upload it to a cloud storage service here
       // For now, we'll use a placeholder URL or the actual URL if provided
       if (formData.proof_file && !proofUrl) {
@@ -60,15 +67,16 @@ export const Contributions = () => {
         console.log('File selected:', formData.proof_file.name)
         console.log('Note: In production, this file should be uploaded to cloud storage')
       }
-      
+
       const submitData = {
+        stokvel_id: stokvelId,
         member_id: formData.member_id,
         month: formData.month,
         amount: formData.amount,
         date_paid: formData.date_paid,
         proof_of_payment: proofUrl,
       }
-      
+
       if (editingContribution) {
         await updateContribution.mutateAsync({
           id: editingContribution.id,
@@ -77,7 +85,7 @@ export const Contributions = () => {
       } else {
         await createContribution.mutateAsync(submitData)
       }
-      
+
       setShowForm(false)
       setEditingContribution(null)
       setFormData(initialFormData)

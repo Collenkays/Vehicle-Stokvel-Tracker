@@ -17,7 +17,7 @@ export const Payouts = () => {
   const [isGenerating, setIsGenerating] = useState(false)
   const [members, setMembers] = useState<StokvelMember[]>([])
 
-  const { data: payouts, isLoading } = usePayouts()
+  const { data: payouts, isLoading } = usePayouts(stokvelId)
   const { data: nextRecipient } = useNextPayoutRecipient()
   const generatePayout = useGeneratePayout()
   const completePayout = useCompletePayout()
@@ -40,13 +40,18 @@ export const Payouts = () => {
   const shouldShowFairnessAlert = members.length > 0 && StokvelLogicEngine.shouldTriggerFairnessCalculation(members)
 
   const handleGeneratePayout = async () => {
+    if (!stokvelId) {
+      alert('No stokvel selected')
+      return
+    }
+
     if (!window.confirm('Are you sure you want to generate a new payout? This will create a payout for the next member in rotation.')) {
       return
     }
 
     setIsGenerating(true)
     try {
-      await generatePayout.mutateAsync()
+      await generatePayout.mutateAsync(stokvelId)
     } catch (error: any) {
       alert(error.message || 'Failed to generate payout')
     }
