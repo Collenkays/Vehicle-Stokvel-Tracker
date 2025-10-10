@@ -3,22 +3,32 @@ import { supabase } from '../lib/supabase'
 import { Contribution } from '../types'
 import { Database } from '../types/supabase'
 
-type ContributionInsert = Database['public']['Tables']['contributions']['Insert']
-type ContributionUpdate = Database['public']['Tables']['contributions']['Update']
+type ContributionInsert = Database['public']['Tables']['stokvel_contributions']['Insert']
+type ContributionUpdate = Database['public']['Tables']['stokvel_contributions']['Update']
 
 const CONTRIBUTIONS_QUERY_KEY = ['contributions']
 
-export const useContributions = (month?: string) => {
+export const useContributions = (stokvelId?: string, month?: string) => {
   return useQuery({
-    queryKey: month ? [...CONTRIBUTIONS_QUERY_KEY, month] : CONTRIBUTIONS_QUERY_KEY,
+    queryKey: stokvelId
+      ? month
+        ? [...CONTRIBUTIONS_QUERY_KEY, stokvelId, month]
+        : [...CONTRIBUTIONS_QUERY_KEY, stokvelId]
+      : month
+        ? [...CONTRIBUTIONS_QUERY_KEY, month]
+        : CONTRIBUTIONS_QUERY_KEY,
     queryFn: async (): Promise<Contribution[]> => {
       let query = supabase
-        .from('contributions')
+        .from('stokvel_contributions')
         .select(`
           *,
-          member:members(*)
+          member:user_stokvel_members(*)
         `)
         .order('date_paid', { ascending: false })
+
+      if (stokvelId) {
+        query = query.eq('stokvel_id', stokvelId)
+      }
 
       if (month) {
         query = query.eq('month', month)
@@ -29,6 +39,7 @@ export const useContributions = (month?: string) => {
       if (error) throw error
       return data as Contribution[]
     },
+    enabled: !!stokvelId,
   })
 }
 
@@ -37,10 +48,10 @@ export const useContribution = (id: string) => {
     queryKey: ['contribution', id],
     queryFn: async (): Promise<Contribution> => {
       const { data, error } = await supabase
-        .from('contributions')
+        .from('stokvel_contributions')
         .select(`
           *,
-          member:members(*)
+          member:user_stokvel_members(*)
         `)
         .eq('id', id)
         .single()
@@ -58,7 +69,7 @@ export const useCreateContribution = () => {
   return useMutation({
     mutationFn: async (contributionData: Omit<ContributionInsert, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
-        .from('contributions')
+        .from('stokvel_contributions')
         .insert(contributionData)
         .select()
         .single()
@@ -79,7 +90,7 @@ export const useUpdateContribution = () => {
   return useMutation({
     mutationFn: async ({ id, ...updateData }: { id: string } & ContributionUpdate) => {
       const { data, error } = await supabase
-        .from('contributions')
+        .from('stokvel_contributions')
         .update(updateData)
         .eq('id', id)
         .select()
@@ -101,7 +112,7 @@ export const useDeleteContribution = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('contributions')
+        .from('stokvel_contributions')
         .delete()
         .eq('id', id)
 
@@ -114,13 +125,19 @@ export const useDeleteContribution = () => {
   })
 }
 
-export const useContributionSummary = (month?: string) => {
+export const useContributionSummary = (stokvelId?: string, month?: string) => {
   return useQuery({
-    queryKey: ['contribution-summary', month],
+    queryKey: stokvelId
+      ? ['contribution-summary', stokvelId, month]
+      : ['contribution-summary', month],
     queryFn: async () => {
       let query = supabase
-        .from('contributions')
+        .from('stokvel_contributions')
         .select('amount, verified')
+
+      if (stokvelId) {
+        query = query.eq('stokvel_id', stokvelId)
+      }
 
       if (month) {
         query = query.eq('month', month)
@@ -145,5 +162,6 @@ export const useContributionSummary = (month?: string) => {
         pendingContributions: data.filter(contrib => !contrib.verified).length,
       }
     },
+    enabled: !!stokvelId,
   })
 }

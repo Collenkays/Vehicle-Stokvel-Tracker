@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Eye, Settings, Users, TrendingUp, Calendar, Crown, UserCircle, Plus, Edit, Trash2, Car } from 'lucide-react'
+import { Eye, Settings, Users, TrendingUp, Calendar, Crown, UserCircle, Plus, Edit, Trash2, Car, Dices } from 'lucide-react'
 import { useUserStokvelMemberships } from '../hooks/useUserStokvels'
 import { useStokvelSummaries } from '../hooks/useUserStokvels'
-import { useMembers, useCreateMember, useUpdateMember, useDeleteMember } from '../hooks/useMembers'
+import { useCreateMember, useUpdateMember, useDeleteMember, useStokvelMembers } from '../hooks/useMembers'
+import { useConductLottery, useCanConductLottery } from '../hooks/useLottery'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -13,6 +14,10 @@ import { StokvelWithType, StokvelSummary } from '../types/multi-stokvel'
 import { Member } from '../types'
 import { formatDate } from '../utils/date'
 import { formatCurrency } from '../utils/currency'
+import { LotteryDrawDialog } from '../components/LotteryDrawDialog'
+import { LotteryHistoryCard } from '../components/LotteryHistoryCard'
+import { LotteryDrawResult } from '../services/LotterySystem'
+import { useAuth } from '../contexts/AuthContext'
 
 interface MembershipCardProps {
   stokvel: StokvelWithType
@@ -192,14 +197,20 @@ const initialFormData: MemberFormData = {
 
 // Legacy Member Management Component (for specific stokvel context)
 const StokvelMembersManagement = () => {
+  const params = useParams()
+  const { user } = useAuth()
   const [showForm, setShowForm] = useState(false)
+  const [showLotteryDialog, setShowLotteryDialog] = useState(false)
   const [editingMember, setEditingMember] = useState<Member | null>(null)
   const [formData, setFormData] = useState<MemberFormData>(initialFormData)
 
-  const { data: members, isLoading } = useMembers()
+  const stokvelId = params.stokvelId || ''
+  const { data: members = [], isLoading } = useStokvelMembers(stokvelId)
+  const { data: canConductLottery = false } = useCanConductLottery(stokvelId)
   const createMember = useCreateMember()
   const updateMember = useUpdateMember()
   const deleteMember = useDeleteMember()
+  const conductLottery = useConductLottery()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -246,6 +257,14 @@ const StokvelMembersManagement = () => {
     setFormData(initialFormData)
   }
 
+  const handleLotteryComplete = async (result: LotteryDrawResult) => {
+    await conductLottery.mutateAsync({
+      lotteryResult: result,
+      notes: 'Lottery conducted via Members page',
+    })
+    setShowLotteryDialog(false)
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -261,13 +280,31 @@ const StokvelMembersManagement = () => {
           <h1 className="text-3xl font-bold text-gray-900">Members</h1>
           <p className="text-gray-600">Manage stokvel members and rotation order</p>
         </div>
-        {!showForm && (
-          <Button onClick={() => setShowForm(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Member
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {canConductLottery && !showForm && (
+            <Button variant="outline" onClick={() => setShowLotteryDialog(true)}>
+              <Dices className="mr-2 h-4 w-4" />
+              Conduct Lottery
+            </Button>
+          )}
+          {!showForm && (
+            <Button onClick={() => setShowForm(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Member
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Lottery Dialog */}
+      <LotteryDrawDialog
+        open={showLotteryDialog}
+        onClose={() => setShowLotteryDialog(false)}
+        stokvelId={stokvelId}
+        members={members}
+        onLotteryComplete={handleLotteryComplete}
+        conductedBy={user?.id || ''}
+      />
 
       {showForm && (
         <Card>
@@ -408,6 +445,11 @@ const StokvelMembersManagement = () => {
             <p className="text-gray-500">No members found. Add your first member to get started.</p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Lottery History */}
+      {stokvelId && members.length > 0 && (
+        <LotteryHistoryCard stokvelId={stokvelId} />
       )}
     </div>
   )
