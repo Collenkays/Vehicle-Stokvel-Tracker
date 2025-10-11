@@ -8,6 +8,7 @@ import { formatCurrency } from '../utils/currency'
 import { formatDate } from '../utils/date'
 import { getStokvelCardContent, getStokvelTypeDisplayName } from '../utils/stokvelCardContent'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
+import { HelpTooltip } from '../components/HelpTooltip'
 
 export const Dashboard = () => {
   const { stokvelId } = useParams<{ stokvelId?: string }>()
@@ -65,7 +66,10 @@ export const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
+              <HelpTooltip content="Total verified contributions minus payouts. Only verified contributions count toward this balance and payout triggers." />
+            </div>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -110,7 +114,10 @@ export const Dashboard = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{cardContent.pendingMembersLabel}</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-medium">{cardContent.pendingMembersLabel}</CardTitle>
+              <HelpTooltip content="Active members who haven't received their payout yet. They're waiting in the rotation queue." />
+            </div>
             <PendingMembersIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>

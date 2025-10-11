@@ -3,18 +3,19 @@ import { Link, useLocation, useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
-import { 
-  Home, 
-  Users, 
-  CreditCard, 
-  Banknote, 
-  FileText, 
-  Settings, 
+import {
+  Home,
+  Users,
+  CreditCard,
+  Banknote,
+  FileText,
+  Settings,
   LogOut,
   Menu,
   ChevronDown,
   Plus,
-  Grid3X3
+  Grid3X3,
+  UserCog
 } from 'lucide-react'
 import { useState } from 'react'
 import { useUserStokvel } from '../hooks/useUserStokvels'
@@ -44,13 +45,22 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Navigation items that adjust based on whether we're in a specific stokvel context
   const getNavigation = () => {
     const baseHref = stokvelId ? `/stokvel/${stokvelId}` : ''
+
+    // Only show stokvel-specific navigation when a stokvel is selected
+    if (stokvelId) {
+      return [
+        { name: 'Dashboard', href: `${baseHref}/dashboard`, icon: Home },
+        { name: 'Members', href: `${baseHref}/members`, icon: Users },
+        { name: 'Contributions', href: `${baseHref}/contributions`, icon: CreditCard },
+        { name: 'Payouts', href: `${baseHref}/payouts`, icon: Banknote },
+        { name: 'Reports', href: `${baseHref}/reports`, icon: FileText },
+        { name: 'Settings', href: `${baseHref}/settings`, icon: Settings },
+      ]
+    }
+
+    // When no stokvel is selected, show minimal navigation
     return [
-      { name: 'Dashboard', href: stokvelId ? `${baseHref}/dashboard` : '/', icon: Home },
-      { name: 'Members', href: `${baseHref}/members`, icon: Users },
-      { name: 'Contributions', href: `${baseHref}/contributions`, icon: CreditCard },
-      { name: 'Payouts', href: `${baseHref}/payouts`, icon: Banknote },
-      { name: 'Reports', href: `${baseHref}/reports`, icon: FileText },
-      { name: 'Settings', href: `${baseHref}/settings`, icon: Settings },
+      { name: 'My Stokvels', href: '/my-stokvels', icon: Grid3X3 },
     ]
   }
   
@@ -156,23 +166,31 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               })}
             </nav>
           </div>
-          <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-            <div className="flex items-center">
-              <div>
-                <div className="text-base font-medium text-gray-800">
-                  {user?.email}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={signOut}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign out
-                </Button>
-              </div>
+          <div className="flex-shrink-0 flex flex-col border-t border-gray-200 p-4 space-y-2">
+            <div className="text-base font-medium text-gray-800">
+              {user?.email}
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                navigate('/account-settings')
+                setSidebarOpen(false)
+              }}
+              className="justify-start text-gray-500 hover:text-gray-700"
+            >
+              <UserCog className="mr-2 h-4 w-4" />
+              Account Settings
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={signOut}
+              className="justify-start text-gray-500 hover:text-gray-700"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign out
+            </Button>
           </div>
         </div>
       </div>
@@ -263,23 +281,28 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               })}
             </nav>
           </div>
-          <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-            <div className="flex items-center w-full">
-              <div className="flex-1">
-                <div className="text-sm font-medium text-gray-700">
-                  {user?.email}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={signOut}
-                  className="mt-1 text-gray-500 hover:text-gray-700 p-0 h-auto"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign out
-                </Button>
-              </div>
+          <div className="flex-shrink-0 flex flex-col border-t border-gray-200 p-4 space-y-2">
+            <div className="text-sm font-medium text-gray-700">
+              {user?.email}
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/account-settings')}
+              className="justify-start text-gray-500 hover:text-gray-700 p-0 h-auto"
+            >
+              <UserCog className="mr-2 h-4 w-4" />
+              Account Settings
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={signOut}
+              className="justify-start text-gray-500 hover:text-gray-700 p-0 h-auto"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign out
+            </Button>
           </div>
         </div>
       </div>

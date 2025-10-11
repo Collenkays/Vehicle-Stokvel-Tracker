@@ -8,17 +8,22 @@ import { Contributions } from './pages/Contributions'
 import { Payouts } from './pages/Payouts'
 import { Reports } from './pages/Reports'
 import { Settings } from './pages/Settings'
+import { GlobalSettings } from './pages/GlobalSettings'
 import { MyStokvels } from './pages/MyStokvels'
 import { StokvelTypeCatalog } from './pages/StokvelTypeCatalog'
 import { CreateStokvelWizard } from './components/CreateStokvelWizard'
 import FairnessDashboard from './pages/FairnessDashboard'
+import { FAQ } from './pages/FAQ'
+import { UserGuide } from './pages/UserGuide'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { InstallPrompt } from './components/InstallPrompt'
+import { HelpSystem } from './components/HelpSystem'
 
 function App() {
   return (
     <AuthProvider>
       <InstallPrompt />
+      <HelpSystem />
       <Routes>
         <Route path="/login" element={<Login />} />
         
@@ -36,6 +41,36 @@ function App() {
           element={
             <ProtectedRoute>
               <CreateStokvelWizard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Global account settings (full-screen, no layout) */}
+        <Route
+          path="/account-settings"
+          element={
+            <ProtectedRoute>
+              <GlobalSettings />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* FAQ page (full-screen, no layout) */}
+        <Route
+          path="/faq"
+          element={
+            <ProtectedRoute>
+              <FAQ />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* User Guide page (full-screen, no layout) */}
+        <Route
+          path="/user-guide"
+          element={
+            <ProtectedRoute>
+              <UserGuide />
             </ProtectedRoute>
           }
         />
