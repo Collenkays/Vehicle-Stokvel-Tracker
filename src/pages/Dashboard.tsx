@@ -9,6 +9,7 @@ import { formatDate } from '../utils/date'
 import { getStokvelCardContent, getStokvelTypeDisplayName } from '../utils/stokvelCardContent'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
 import { HelpTooltip } from '../components/HelpTooltip'
+import { AdDisplay } from '../components/AdBanner'
 
 export const Dashboard = () => {
   const { stokvelId } = useParams<{ stokvelId?: string }>()
@@ -208,6 +209,9 @@ export const Dashboard = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Ad Placement - Above Charts */}
+      <AdDisplay slot="YOUR_AD_SLOT_1" />
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
