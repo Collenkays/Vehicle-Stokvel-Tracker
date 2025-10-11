@@ -55,6 +55,19 @@ export const Contributions = () => {
       return
     }
 
+    // Check for duplicate contribution (same member + month)
+    if (!editingContribution) {
+      const isDuplicate = contributions?.some(
+        c => c.member_id === formData.member_id && c.month === formData.month
+      )
+
+      if (isDuplicate) {
+        const memberName = members?.find(m => m.id === formData.member_id)?.full_name
+        alert(`A contribution for ${memberName} already exists for ${formData.month}. Please edit the existing contribution instead of creating a new one.`)
+        return
+      }
+    }
+
     try {
       let proofUrl = formData.proof_of_payment
 
@@ -89,8 +102,16 @@ export const Contributions = () => {
       setShowForm(false)
       setEditingContribution(null)
       setFormData(initialFormData)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving contribution:', error)
+
+      // Handle specific error messages
+      if (error?.code === '23505' || error?.message?.includes('duplicate') || error?.message?.includes('409')) {
+        const memberName = members?.find(m => m.id === formData.member_id)?.full_name
+        alert(`A contribution for ${memberName} already exists for ${formData.month}. Please edit the existing contribution instead.`)
+      } else {
+        alert(`Failed to save contribution: ${error?.message || 'Unknown error'}`)
+      }
     }
   }
 
