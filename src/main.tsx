@@ -9,9 +9,8 @@ import { registerServiceWorker } from './utils/pwa'
 const queryClient = new QueryClient()
 
 // Register Service Worker for PWA functionality
-if (import.meta.env.PROD) {
-  registerServiceWorker()
-}
+// Enable in both dev and production to test PWA features
+registerServiceWorker()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
