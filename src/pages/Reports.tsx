@@ -10,6 +10,7 @@ import { Label } from '../components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { formatCurrency } from '../utils/currency'
 import { getCurrentMonth } from '../utils/date'
+import { AdHorizontalBanner } from '../components/AdBanner'
 
 export const Reports = () => {
   const { stokvelId } = useParams<{ stokvelId: string }>()
@@ -317,6 +318,9 @@ export const Reports = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Ad Placement - Bottom of page */}
+      <AdHorizontalBanner slot="YOUR_AD_SLOT_2" />
     </div>
   )
 }
