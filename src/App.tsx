@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import { AuthProvider } from './contexts/AuthContext'
 import { Layout } from './components/Layout'
 import { Login } from './pages/Login'
@@ -22,6 +23,7 @@ import { HelpSystem } from './components/HelpSystem'
 function App() {
   return (
     <AuthProvider>
+      <Analytics />
       <InstallPrompt />
       <HelpSystem />
       <Routes>
