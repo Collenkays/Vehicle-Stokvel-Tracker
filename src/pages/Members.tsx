@@ -3,15 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Eye, Settings, Users, TrendingUp, Calendar, Crown, UserCircle, Plus, Edit, Trash2, Car, Dices } from 'lucide-react'
 import { useUserStokvelMemberships } from '../hooks/useUserStokvels'
 import { useStokvelSummaries } from '../hooks/useUserStokvels'
-import { useCreateMember, useUpdateMember, useDeleteMember, useStokvelMembers } from '../hooks/useMembers'
+import { useAddStokvelMember, useUpdateStokvelMember, useDeleteStokvelMember, useStokvelMembers } from '../hooks/useMembers'
 import { useConductLottery, useCanConductLottery } from '../hooks/useLottery'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
-import { StokvelWithType, StokvelSummary } from '../types/multi-stokvel'
-import { Member } from '../types'
+import { StokvelWithType, StokvelSummary, StokvelMember } from '../types/multi-stokvel'
 import { formatDate } from '../utils/date'
 import { formatCurrency } from '../utils/currency'
 import { LotteryDrawDialog } from '../components/LotteryDrawDialog'
@@ -201,30 +200,42 @@ const StokvelMembersManagement = () => {
   const { user } = useAuth()
   const [showForm, setShowForm] = useState(false)
   const [showLotteryDialog, setShowLotteryDialog] = useState(false)
-  const [editingMember, setEditingMember] = useState<Member | null>(null)
+  const [editingMember, setEditingMember] = useState<StokvelMember | null>(null)
   const [formData, setFormData] = useState<MemberFormData>(initialFormData)
 
   const stokvelId = params.stokvelId || ''
   const { data: members = [], isLoading } = useStokvelMembers(stokvelId)
   const { data: canConductLottery = false } = useCanConductLottery(stokvelId)
-  const createMember = useCreateMember()
-  const updateMember = useUpdateMember()
-  const deleteMember = useDeleteMember()
+  const addMember = useAddStokvelMember()
+  const updateMember = useUpdateStokvelMember()
+  const deleteMember = useDeleteStokvelMember()
   const conductLottery = useConductLottery()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     try {
       if (editingMember) {
         await updateMember.mutateAsync({
           id: editingMember.id,
-          ...formData,
+          stokvel_id: stokvelId,
+          updates: {
+            full_name: formData.full_name,
+            email: formData.email,
+            contact_number: formData.contact_number,
+            rotation_order: formData.rotation_order,
+          },
         })
       } else {
-        await createMember.mutateAsync(formData)
+        await addMember.mutateAsync({
+          stokvel_id: stokvelId,
+          full_name: formData.full_name,
+          email: formData.email,
+          contact_number: formData.contact_number,
+          rotation_order: formData.rotation_order,
+        })
       }
-      
+
       setShowForm(false)
       setEditingMember(null)
       setFormData(initialFormData)
@@ -233,21 +244,21 @@ const StokvelMembersManagement = () => {
     }
   }
 
-  const handleEdit = (member: Member) => {
+  const handleEdit = (member: StokvelMember) => {
     setEditingMember(member)
     setFormData({
       full_name: member.full_name,
       email: member.email,
-      contact_number: member.contact_number,
+      contact_number: member.contact_number || '',
       join_date: member.join_date,
-      rotation_order: member.rotation_order,
+      rotation_order: member.rotation_order || 1,
     })
     setShowForm(true)
   }
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this member?')) {
-      await deleteMember.mutateAsync(id)
+      await deleteMember.mutateAsync({ id, stokvel_id: stokvelId })
     }
   }
 
@@ -368,8 +379,8 @@ const StokvelMembersManagement = () => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button type="submit" disabled={createMember.isPending || updateMember.isPending}>
-                  {createMember.isPending || updateMember.isPending ? 'Saving...' : 'Save'}
+                <Button type="submit" disabled={addMember.isPending || updateMember.isPending}>
+                  {addMember.isPending || updateMember.isPending ? 'Saving...' : 'Save'}
                 </Button>
                 <Button type="button" variant="outline" onClick={handleCancel}>
                   Cancel
