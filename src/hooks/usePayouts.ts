@@ -12,22 +12,36 @@ export const usePayouts = (stokvelId?: string) => {
   return useQuery({
     queryKey: stokvelId ? [...PAYOUTS_QUERY_KEY, stokvelId] : PAYOUTS_QUERY_KEY,
     queryFn: async (): Promise<Payout[]> => {
-      let query = supabase
+      if (!stokvelId) return []
+
+      // First get the payouts
+      const { data: payoutsData, error: payoutsError } = await supabase
         .from('stokvel_payouts')
-        .select(`
-          *,
-          member:user_stokvel_members(*)
-        `)
+        .select('*')
+        .eq('stokvel_id', stokvelId)
         .order('created_at', { ascending: false })
 
-      if (stokvelId) {
-        query = query.eq('stokvel_id', stokvelId)
-      }
+      if (payoutsError) throw payoutsError
+      if (!payoutsData || payoutsData.length === 0) return []
 
-      const { data, error } = await query
+      // Then get the member details for each payout
+      const recipientMemberIds = payoutsData.map(p => p.recipient_member_id)
+      const { data: membersData, error: membersError } = await supabase
+        .from('user_stokvel_members')
+        .select('member_id, full_name, email, contact_number, rotation_order')
+        .in('member_id', recipientMemberIds)
+        .eq('stokvel_id', stokvelId)
 
-      if (error) throw error
-      return data as Payout[]
+      if (membersError) throw membersError
+
+      // Create a map of member IDs to member data
+      const memberMap = new Map(membersData?.map(m => [m.member_id, m]) || [])
+
+      // Combine the data
+      return payoutsData.map(payout => ({
+        ...payout,
+        member: memberMap.get(payout.recipient_member_id) || null
+      })) as Payout[]
     },
     enabled: !!stokvelId,
   })
@@ -37,17 +51,29 @@ export const usePayout = (id: string) => {
   return useQuery({
     queryKey: ['payout', id],
     queryFn: async (): Promise<Payout> => {
-      const { data, error } = await supabase
+      // First get the payout
+      const { data: payoutData, error: payoutError } = await supabase
         .from('stokvel_payouts')
-        .select(`
-          *,
-          member:user_stokvel_members(*)
-        `)
+        .select('*')
         .eq('id', id)
         .single()
 
-      if (error) throw error
-      return data as Payout
+      if (payoutError) throw payoutError
+
+      // Then get the member details
+      const { data: memberData, error: memberError } = await supabase
+        .from('user_stokvel_members')
+        .select('member_id, full_name, email, contact_number, rotation_order')
+        .eq('member_id', payoutData.recipient_member_id)
+        .eq('stokvel_id', payoutData.stokvel_id)
+        .single()
+
+      if (memberError) throw memberError
+
+      return {
+        ...payoutData,
+        member: memberData
+      } as Payout
     },
     enabled: !!id,
   })
