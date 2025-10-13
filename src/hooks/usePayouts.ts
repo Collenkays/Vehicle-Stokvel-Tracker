@@ -106,7 +106,7 @@ export const useCompletePayout = () => {
       // Start a transaction to update both payout and member
       const { data: payout, error: payoutError } = await supabase
         .from('stokvel_payouts')
-        .select('member_id, month_paid, stokvel_id')
+        .select('recipient_member_id, month_paid, stokvel_id')
         .eq('id', payoutId)
         .single()
 
@@ -127,7 +127,7 @@ export const useCompletePayout = () => {
           vehicle_received: true,
           month_received: payout.month_paid
         })
-        .eq('id', payout.member_id)
+        .eq('member_id', payout.recipient_member_id)
 
       if (updateMemberError) throw updateMemberError
 
@@ -216,11 +216,10 @@ export const useGeneratePayout = () => {
         .from('stokvel_payouts')
         .insert({
           stokvel_id: stokvelId,
-          member_id: member.id,
+          recipient_member_id: member.member_id,
           month_paid: new Date().toLocaleDateString('en-ZA', { year: 'numeric', month: 'long' }),
           amount_paid: payoutAmount,
           rollover_balance: rolloverBalance,
-          vehicle_value: payoutAmount,
           status: 'pending'
         })
         .select()

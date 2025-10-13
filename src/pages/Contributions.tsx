@@ -10,6 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Contribution } from '../types'
 import { formatCurrency } from '../utils/currency'
 import { formatDate, getCurrentMonth } from '../utils/date'
+import { uploadProofOfPayment, deleteProofOfPayment } from '../lib/storage'
+import { supabase } from '../lib/supabase'
 
 interface ContributionFormData {
   member_id: string
@@ -49,6 +51,44 @@ export const Contributions = () => {
       return
     }
 
+    // Validate member_id exists
+    if (!formData.member_id) {
+      alert('Please select a member')
+      return
+    }
+
+    // Validate that the selected member exists in the members list
+    const memberExists = members?.some(m => m.id === formData.member_id)
+    if (!memberExists) {
+      alert('Invalid member selected. Please refresh the page and try again.')
+      console.error('Member ID not found in members list:', formData.member_id)
+      console.log('Available members:', members)
+      return
+    }
+
+    // CRITICAL: Verify the member exists in the database before proceeding
+    try {
+      const { data: verifyMember, error: verifyError } = await supabase
+        .from('user_stokvel_members')
+        .select('id, full_name, stokvel_id')
+        .eq('id', formData.member_id)
+        .eq('stokvel_id', stokvelId)
+        .single()
+
+      if (verifyError || !verifyMember) {
+        console.error('Database verification failed:', verifyError)
+        console.error('Looking for member ID:', formData.member_id, 'in stokvel:', stokvelId)
+        alert('Error: The selected member could not be verified in the database. This member may have been deleted. Please refresh the page and try again.')
+        return
+      }
+
+      console.log('Member verified in database:', verifyMember)
+    } catch (verifyError) {
+      console.error('Verification query failed:', verifyError)
+      alert('Error: Could not verify member in database. Please try again.')
+      return
+    }
+
     // Validate that either proof_of_payment URL or proof_file is provided
     if (!formData.proof_of_payment && !formData.proof_file) {
       alert('Please provide proof of payment either as a URL or by uploading a file.')
@@ -70,15 +110,24 @@ export const Contributions = () => {
 
     try {
       let proofUrl = formData.proof_of_payment
+      let uploadedFileUrl: string | null = null
 
-      // If a file is uploaded, you would typically upload it to a cloud storage service here
-      // For now, we'll use a placeholder URL or the actual URL if provided
-      if (formData.proof_file && !proofUrl) {
-        // In a real implementation, you would upload the file to cloud storage (e.g., AWS S3, Cloudinary)
-        // and get back a URL. For now, we'll create a temporary object URL
-        proofUrl = URL.createObjectURL(formData.proof_file)
-        console.log('File selected:', formData.proof_file.name)
-        console.log('Note: In production, this file should be uploaded to cloud storage')
+      // If a file is uploaded, upload it to Supabase Storage
+      if (formData.proof_file) {
+        try {
+          console.log('Uploading file:', formData.proof_file.name)
+          uploadedFileUrl = await uploadProofOfPayment(
+            formData.proof_file,
+            stokvelId,
+            formData.member_id
+          )
+          proofUrl = uploadedFileUrl
+          console.log('File uploaded successfully:', proofUrl)
+        } catch (uploadError: any) {
+          console.error('File upload failed:', uploadError)
+          alert(`Failed to upload file: ${uploadError.message}`)
+          return
+        }
       }
 
       const submitData = {
@@ -90,18 +139,64 @@ export const Contributions = () => {
         proof_of_payment: proofUrl,
       }
 
-      if (editingContribution) {
-        await updateContribution.mutateAsync({
-          id: editingContribution.id,
-          ...submitData,
-        })
-      } else {
-        await createContribution.mutateAsync(submitData)
-      }
+      console.log('=== CONTRIBUTION SAVE DEBUG ===')
+      console.log('Stokvel ID:', stokvelId)
+      console.log('Member ID being saved:', formData.member_id)
+      console.log('Selected member name:', members?.find(m => m.id === formData.member_id)?.full_name)
+      console.log('All available members:', members?.map(m => ({
+        id: m.id,
+        name: m.full_name,
+        member_id: m.member_id,
+        email: m.email
+      })))
+      console.log('Submit data:', submitData)
 
-      setShowForm(false)
-      setEditingContribution(null)
-      setFormData(initialFormData)
+      // Additional validation - verify the member exists in the current stokvel
+      const selectedMember = members?.find(m => m.id === formData.member_id)
+      if (!selectedMember) {
+        console.error('CRITICAL: Selected member not found in members list!')
+        console.error('Looking for ID:', formData.member_id)
+        console.error('Available IDs:', members?.map(m => m.id))
+        alert('Error: The selected member could not be found. Please refresh the page and try again.')
+        return
+      }
+      console.log('Selected member details:', selectedMember)
+      console.log('=== END DEBUG ===')
+
+      try {
+        if (editingContribution) {
+          await updateContribution.mutateAsync({
+            id: editingContribution.id,
+            ...submitData,
+          })
+        } else {
+          await createContribution.mutateAsync(submitData)
+        }
+
+        // Success - clear form and close
+        setShowForm(false)
+        setEditingContribution(null)
+        setFormData(initialFormData)
+
+        // Clear file input
+        const fileInput = document.getElementById('proof_file') as HTMLInputElement
+        if (fileInput) {
+          fileInput.value = ''
+        }
+      } catch (dbError: any) {
+        // If contribution insert fails but file was uploaded, clean up the file
+        if (uploadedFileUrl) {
+          try {
+            await deleteProofOfPayment(uploadedFileUrl)
+            console.log('Cleaned up uploaded file after database error')
+          } catch (cleanupError) {
+            console.error('Failed to clean up uploaded file:', cleanupError)
+          }
+        }
+
+        // Re-throw the error to be handled by outer catch
+        throw dbError
+      }
     } catch (error: any) {
       console.error('Error saving contribution:', error)
 
@@ -109,6 +204,9 @@ export const Contributions = () => {
       if (error?.code === '23505' || error?.message?.includes('duplicate') || error?.message?.includes('409')) {
         const memberName = members?.find(m => m.id === formData.member_id)?.full_name
         alert(`A contribution for ${memberName} already exists for ${formData.month}. Please edit the existing contribution instead.`)
+      } else if (error?.code === '23503' || error?.message?.includes('foreign key') || error?.message?.includes('fkey')) {
+        const memberName = members?.find(m => m.id === formData.member_id)?.full_name || 'selected member'
+        alert(`Database error: The ${memberName} record is invalid or has been deleted. Please refresh the page and try again.`)
       } else {
         alert(`Failed to save contribution: ${error?.message || 'Unknown error'}`)
       }
@@ -224,12 +322,21 @@ export const Contributions = () => {
                     required
                   >
                     <option value="">Select a member</option>
-                    {members?.map((member) => (
-                      <option key={member.id} value={member.id}>
-                        {member.full_name}
-                      </option>
-                    ))}
+                    {members && members.length > 0 ? (
+                      members.map((member) => (
+                        <option key={member.id} value={member.id}>
+                          {member.full_name}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="" disabled>No members found - please add members first</option>
+                    )}
                   </select>
+                  {members && members.length === 0 && (
+                    <p className="text-sm text-red-600">
+                      No members in this stokvel. Please add members in the Members page before recording contributions.
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="month">Month</Label>

@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS public.user_stokvel_members (
 );
 
 -- Create stokvel_contributions table (contributions per stokvel)
+-- Note: member_id references user_stokvel_members.id (the member record for this stokvel)
 CREATE TABLE IF NOT EXISTS public.stokvel_contributions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     stokvel_id UUID REFERENCES public.user_stokvels(id) ON DELETE CASCADE,
@@ -65,14 +66,15 @@ CREATE TABLE IF NOT EXISTS public.stokvel_contributions (
     verified BOOLEAN DEFAULT FALSE,
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(stokvel_id, member_id, month) -- Prevent duplicate contributions per member per month
 );
 
 -- Create stokvel_payouts table (payouts per stokvel)
 CREATE TABLE IF NOT EXISTS public.stokvel_payouts (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     stokvel_id UUID REFERENCES public.user_stokvels(id) ON DELETE CASCADE,
-    member_id UUID REFERENCES public.user_stokvel_members(id) ON DELETE CASCADE,
+    recipient_member_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     month_paid TEXT NOT NULL,
     amount_paid NUMERIC NOT NULL,
     rollover_balance NUMERIC DEFAULT 0,

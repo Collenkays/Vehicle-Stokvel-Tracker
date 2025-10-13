@@ -32,3 +32,6 @@ dist-ssr
 
 # Supabase
 .supabase
+
+# SQL Archive (old debugging/iteration files)
+.sql-archive/

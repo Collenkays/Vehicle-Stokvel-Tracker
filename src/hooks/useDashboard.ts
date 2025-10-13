@@ -258,20 +258,20 @@ export const usePayoutHistory = (stokvelId?: string) => {
       }
 
       // Then get member names
-      const memberIds = payoutsData.map(p => p.member_id)
+      const recipientMemberIds = payoutsData.map(p => p.recipient_member_id)
       const { data: membersData, error: membersError } = await supabase
         .from('user_stokvel_members')
-        .select('id, full_name')
-        .in('id', memberIds)
+        .select('member_id, full_name')
+        .in('member_id', recipientMemberIds)
 
       if (membersError) throw membersError
 
       // Create a map of member IDs to names
-      const memberMap = new Map(membersData?.map(m => [m.id, m.full_name]) || [])
+      const memberMap = new Map(membersData?.map(m => [m.member_id, m.full_name]) || [])
 
       return payoutsData.map(payout => ({
         month: payout.month_paid,
-        memberName: memberMap.get(payout.member_id) || 'Unknown',
+        memberName: memberMap.get(payout.recipient_member_id) || 'Unknown',
         amount: payout.amount_paid,
         vehicleValue: payout.amount_paid, // stokvel_payouts doesn't have vehicle_value, use amount_paid
         rolloverBalance: payout.rollover_balance,
