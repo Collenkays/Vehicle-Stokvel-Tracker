@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Eye, Settings, Users, TrendingUp, Calendar, Crown, UserCircle, Plus, Edit, Trash2, Car, Dices } from 'lucide-react'
+import { Eye, Settings, Users, TrendingUp, Calendar, Crown, UserCircle, Plus, Edit, Trash2, Car, Dices, Mail, Clock, XCircle } from 'lucide-react'
 import { useUserStokvelMemberships } from '../hooks/useUserStokvels'
-import { useStokvelSummaries } from '../hooks/useUserStokvels'
+import { useStokvelSummaries, useUserStokvel } from '../hooks/useUserStokvels'
 import { useAddStokvelMember, useUpdateStokvelMember, useDeleteStokvelMember, useStokvelMembers } from '../hooks/useMembers'
 import { useConductLottery, useCanConductLottery } from '../hooks/useLottery'
+import { usePendingInvitations, useRevokeInvitation } from '../hooks/useInvitations'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -17,6 +18,7 @@ import { LotteryDrawDialog } from '../components/LotteryDrawDialog'
 import { LotteryHistoryCard } from '../components/LotteryHistoryCard'
 import { LotteryDrawResult } from '../services/LotterySystem'
 import { useAuth } from '../contexts/AuthContext'
+import { InviteMemberModal } from '../components/InviteMemberModal'
 
 interface MembershipCardProps {
   stokvel: StokvelWithType
@@ -199,17 +201,26 @@ const StokvelMembersManagement = () => {
   const params = useParams()
   const { user } = useAuth()
   const [showForm, setShowForm] = useState(false)
+  const [showInviteModal, setShowInviteModal] = useState(false)
   const [showLotteryDialog, setShowLotteryDialog] = useState(false)
   const [editingMember, setEditingMember] = useState<StokvelMember | null>(null)
   const [formData, setFormData] = useState<MemberFormData>(initialFormData)
 
   const stokvelId = params.stokvelId || ''
+  const { data: stokvel } = useUserStokvel(stokvelId)
   const { data: members = [], isLoading } = useStokvelMembers(stokvelId)
+  const { data: pendingInvitations = [] } = usePendingInvitations(stokvelId)
   const { data: canConductLottery = false } = useCanConductLottery(stokvelId)
   const addMember = useAddStokvelMember()
   const updateMember = useUpdateStokvelMember()
   const deleteMember = useDeleteStokvelMember()
   const conductLottery = useConductLottery()
+  const revokeInvitation = useRevokeInvitation()
+
+  // Calculate next rotation order
+  const nextRotationOrder = members.length > 0
+    ? Math.max(...members.map(m => m.rotation_order || 0)) + 1
+    : 1
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -276,6 +287,12 @@ const StokvelMembersManagement = () => {
     setShowLotteryDialog(false)
   }
 
+  const handleRevokeInvitation = async (invitationId: string) => {
+    if (window.confirm('Are you sure you want to revoke this invitation?')) {
+      await revokeInvitation.mutateAsync({ invitationId, stokvelId })
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -299,10 +316,16 @@ const StokvelMembersManagement = () => {
             </Button>
           )}
           {!showForm && (
-            <Button onClick={() => setShowForm(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Member
-            </Button>
+            <>
+              <Button variant="outline" onClick={() => setShowInviteModal(true)}>
+                <Mail className="mr-2 h-4 w-4" />
+                Invite Member
+              </Button>
+              <Button onClick={() => setShowForm(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Member
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -316,6 +339,68 @@ const StokvelMembersManagement = () => {
         onLotteryComplete={handleLotteryComplete}
         conductedBy={user?.id || ''}
       />
+
+      {/* Invite Member Modal */}
+      <InviteMemberModal
+        open={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        stokvelId={stokvelId}
+        stokvelName={stokvel?.name || 'Stokvel'}
+        nextRotationOrder={nextRotationOrder}
+      />
+
+      {/* Pending Invitations */}
+      {pendingInvitations.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-orange-500" />
+              Pending Invitations ({pendingInvitations.length})
+            </CardTitle>
+            <CardDescription>
+              Members who have been invited but haven't joined yet
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {pendingInvitations.map((invitation) => (
+                <div
+                  key={invitation.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-gray-900">
+                        {invitation.full_name}
+                      </p>
+                      <Badge variant={invitation.role === 'admin' ? 'default' : 'secondary'}>
+                        {invitation.role}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-gray-600">{invitation.email}</p>
+                    <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
+                      <span>
+                        Expires: {new Date(invitation.expires_at).toLocaleDateString()}
+                      </span>
+                      {invitation.rotation_order && (
+                        <span>Rotation: #{invitation.rotation_order}</span>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRevokeInvitation(invitation.id)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {showForm && (
         <Card>

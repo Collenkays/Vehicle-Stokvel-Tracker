@@ -16,6 +16,7 @@ import { CreateStokvelWizard } from './components/CreateStokvelWizard'
 import FairnessDashboard from './pages/FairnessDashboard'
 import { FAQ } from './pages/FAQ'
 import { UserGuide } from './pages/UserGuide'
+import { AcceptInvitation } from './pages/AcceptInvitation'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { InstallPrompt } from './components/InstallPrompt'
 import { HelpSystem } from './components/HelpSystem'
@@ -28,7 +29,10 @@ function App() {
       <HelpSystem />
       <Routes>
         <Route path="/login" element={<Login />} />
-        
+
+        {/* Public invitation route (no authentication required) */}
+        <Route path="/invite/:token" element={<AcceptInvitation />} />
+
         {/* Multi-stokvel routes (full-screen, no layout) */}
         <Route
           path="/browse-stokvel-types"

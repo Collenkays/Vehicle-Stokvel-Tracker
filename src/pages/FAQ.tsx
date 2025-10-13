@@ -228,11 +228,63 @@ const faqData: FAQItem[] = [
     answer: 'Members are assigned numbers (1, 2, 3, etc.). Member #1 receives first payout. After receiving, they\'re skipped in future cycles. The next eligible member (lowest number who hasn\'t received) is next. Inactive members are skipped automatically.'
   },
   {
+    id: 'invite-member',
+    category: 'members',
+    question: 'How do I invite a new member?',
+    keywords: ['invite', 'invitation', 'link', 'join', 'add'],
+    answer: (
+      <div className="space-y-2">
+        <p>Use the secure Member Invitation System:</p>
+        <ol className="list-decimal pl-6 space-y-1">
+          <li>Go to Members page (admins only)</li>
+          <li>Click "Invite Member" button</li>
+          <li>Fill in member details (name, email, role, rotation order)</li>
+          <li>Click "Generate Invitation"</li>
+          <li>Share the link via Copy, WhatsApp, or Email</li>
+        </ol>
+        <p className="mt-2">The invitation link is single-use, expires in 7 days, and requires the member to register/login with the invited email address.</p>
+      </div>
+    )
+  },
+  {
+    id: 'invitation-security',
+    category: 'members',
+    question: 'How secure are invitation links?',
+    keywords: ['security', 'safe', 'invitation', 'link'],
+    answer: (
+      <div className="space-y-2">
+        <p>Invitation links have multiple security layers:</p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li><strong>Single-use:</strong> Each link can only be used once</li>
+          <li><strong>Time-limited:</strong> Links expire after 7 days automatically</li>
+          <li><strong>Email verification:</strong> Members must register with the exact email from the invitation</li>
+          <li><strong>Phone verification:</strong> Optional secondary verification via phone number</li>
+          <li><strong>Admin-only creation:</strong> Only stokvel admins can generate invitations</li>
+          <li><strong>Revocable:</strong> Admins can cancel pending invitations anytime</li>
+        </ul>
+      </div>
+    )
+  },
+  {
+    id: 'invitation-expired',
+    category: 'members',
+    question: 'What if my invitation link expired?',
+    keywords: ['expired', 'old', 'invalid', 'invitation'],
+    answer: 'Contact your stokvel admin to request a new invitation. They can generate a fresh link for you from the Members page. Expired invitations cannot be reused for security reasons. The 7-day expiration ensures invitations remain secure and timely.'
+  },
+  {
+    id: 'pending-invitations',
+    category: 'members',
+    question: 'How do I see pending invitations?',
+    keywords: ['pending', 'waiting', 'invitations', 'manage'],
+    answer: 'Admins can view all pending invitations on the Members page in a dedicated "Pending Invitations" section. This shows who has been invited but hasn\'t joined yet, including their email, role, expiration date, and rotation order. Admins can also revoke pending invitations from this section.'
+  },
+  {
     id: 'add-member',
     category: 'members',
-    question: 'How do I add a new member?',
-    keywords: ['add', 'invite', 'new', 'join'],
-    answer: 'Admins can add members by going to Members page, clicking "Add New Member", entering full name, email, contact number, selecting role (Admin or Member), assigning rotation order (next available number), and saving. New members typically go to end of rotation queue.'
+    question: 'Can I add members manually without invitations?',
+    keywords: ['add', 'manual', 'direct', 'without invitation'],
+    answer: 'Yes! Admins can still add members manually using the "Add Member" button. This is useful for offline scenarios or when you have all member details upfront. However, invitation links are recommended for better security and member verification.'
   },
   {
     id: 'remove-member',
