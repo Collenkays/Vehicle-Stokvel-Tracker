@@ -127,9 +127,15 @@ export const useStokvelMembers = (stokvelId: string | undefined) => {
         .from('user_stokvel_members')
         .select('*')
         .eq('stokvel_id', stokvelId)
+        .eq('is_active', true)  // Only show active members
         .order('rotation_order', { ascending: true })
 
-      if (error) throw error
+      if (error) {
+        console.error('Error fetching stokvel members:', error)
+        throw error
+      }
+
+      console.log(`Fetched ${data?.length || 0} active members for stokvel ${stokvelId}`)
       return data
     },
     enabled: !!stokvelId,

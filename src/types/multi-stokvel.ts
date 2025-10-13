@@ -208,7 +208,7 @@ export interface Database {
         Row: {
           id: string
           stokvel_id: string
-          member_id: string
+          recipient_member_id: string
           month_paid: string
           amount_paid: number
           rollover_balance: number
@@ -221,7 +221,7 @@ export interface Database {
         Insert: {
           id?: string
           stokvel_id: string
-          member_id: string
+          recipient_member_id: string
           month_paid: string
           amount_paid: number
           rollover_balance?: number
@@ -234,7 +234,7 @@ export interface Database {
         Update: {
           id?: string
           stokvel_id?: string
-          member_id?: string
+          recipient_member_id?: string
           month_paid?: string
           amount_paid?: number
           rollover_balance?: number
