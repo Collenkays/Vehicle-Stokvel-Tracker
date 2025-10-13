@@ -56,6 +56,7 @@ export function UserGuide() {
               {[
                 'Multi-Stokvel Management',
                 'Pre-Configured Stokvel Types',
+                'Secure Member Invitation System',
                 'Automated Payout Logic',
                 'Contribution Tracking',
                 'Fairness Calculations',
@@ -104,7 +105,7 @@ export function UserGuide() {
               </span>
               <div>
                 <h3 className="font-semibold text-gray-900 mb-1">Invite Members</h3>
-                <p className="text-gray-600">Send invitations by email or share your stokvel's join link. Members can register and start contributing once they join.</p>
+                <p className="text-gray-600">Use the secure Member Invitation System to send personalized invitation links via WhatsApp, email, or direct share. Each link is single-use and expires in 7 days for security. Members register and join automatically when they accept.</p>
               </div>
             </li>
             <li className="flex gap-4">
@@ -152,38 +153,122 @@ export function UserGuide() {
             Managing Members
           </h2>
           <p className="text-gray-700 mb-4">Vikoba makes it easy to add, organize, and monitor members.</p>
+
+          {/* Member Invitation System */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center gap-2">
+              <span>📧</span> Member Invitation System
+            </h3>
+            <p className="text-blue-800 mb-4">
+              Invite new members securely with personalized invitation links. Each invitation is single-use and expires after 7 days.
+            </p>
+
+            <div className="space-y-4 text-sm">
+              <div>
+                <h4 className="font-semibold text-blue-900 mb-2">How to Invite Members:</h4>
+                <ol className="space-y-2 pl-5 list-decimal text-blue-800">
+                  <li>Navigate to your stokvel's <strong>Members page</strong></li>
+                  <li>Click the <strong>"Invite Member"</strong> button</li>
+                  <li>Fill out the invitation form:
+                    <ul className="pl-5 mt-1 list-disc">
+                      <li>Full Name (required)</li>
+                      <li>Email Address (required - used for verification)</li>
+                      <li>Contact Number (optional - adds extra security)</li>
+                      <li>Role (Admin or Member)</li>
+                      <li>Rotation Order (auto-suggested)</li>
+                    </ul>
+                  </li>
+                  <li>Click <strong>"Generate Invitation"</strong></li>
+                  <li>Share the link via:
+                    <ul className="pl-5 mt-1 list-disc">
+                      <li><strong>Copy Link</strong> - paste anywhere</li>
+                      <li><strong>WhatsApp</strong> - pre-filled message</li>
+                      <li><strong>Email</strong> - direct email with details</li>
+                    </ul>
+                  </li>
+                </ol>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-blue-900 mb-2">For New Members:</h4>
+                <ol className="space-y-2 pl-5 list-decimal text-blue-800">
+                  <li>Click the invitation link you received</li>
+                  <li>Review the invitation details (stokvel name, role, etc.)</li>
+                  <li>Click <strong>"Log In to Accept"</strong> or <strong>"Register New Account"</strong></li>
+                  <li>Sign in with the <strong>email address</strong> from the invitation</li>
+                  <li>Invitation automatically accepted - welcome to the stokvel!</li>
+                </ol>
+              </div>
+
+              <div className="bg-white rounded p-3 border border-blue-300">
+                <h4 className="font-semibold text-blue-900 mb-2">🔒 Security Features:</h4>
+                <ul className="space-y-1 pl-5 list-disc text-blue-800">
+                  <li><strong>Single-use</strong> - Each link works only once</li>
+                  <li><strong>7-day expiration</strong> - Links expire automatically</li>
+                  <li><strong>Email verification</strong> - Member must use invited email</li>
+                  <li><strong>Phone verification</strong> - Optional secondary check</li>
+                  <li><strong>Admin-only</strong> - Only admins can create invitations</li>
+                  <li><strong>Revocable</strong> - Cancel invitations anytime</li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-blue-900 mb-2">Managing Pending Invitations:</h4>
+                <p className="text-blue-800 mb-2">
+                  View all pending invitations on the Members page. Each invitation shows:
+                </p>
+                <ul className="space-y-1 pl-5 list-disc text-blue-800">
+                  <li>Invitee name and email</li>
+                  <li>Role (Admin or Member)</li>
+                  <li>Expiration date</li>
+                  <li>Rotation order</li>
+                  <li>Option to revoke invitation</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Traditional Member Management */}
+          <h3 className="text-lg font-semibold text-gray-900 mb-3 mt-6">Other Member Management Features:</h3>
           <ul className="space-y-3">
             <li className="flex gap-3">
               <span className="text-green-600">•</span>
               <div>
-                <strong className="text-gray-900">Adding Members:</strong>
-                <span className="text-gray-700"> Invite members via email or share your join link.</span>
+                <strong className="text-gray-900">Adding Members Manually:</strong>
+                <span className="text-gray-700"> Admins can add members directly using the "Add Member" button (useful for offline member registration).</span>
               </div>
             </li>
             <li className="flex gap-3">
               <span className="text-green-600">•</span>
               <div>
                 <strong className="text-gray-900">Roles:</strong>
-                <span className="text-gray-700"> Assign roles such as Admin, Treasurer, or Member.</span>
+                <span className="text-gray-700"> Assign roles such as Admin or Member. Admins can manage invitations, contributions, and payouts.</span>
               </div>
             </li>
             <li className="flex gap-3">
               <span className="text-green-600">•</span>
               <div>
                 <strong className="text-gray-900">Member Profiles:</strong>
-                <span className="text-gray-700"> View contact details, contribution history, and payout status.</span>
+                <span className="text-gray-700"> View contact details, contribution history, and payout status for each member.</span>
               </div>
             </li>
             <li className="flex gap-3">
               <span className="text-green-600">•</span>
               <div>
                 <strong className="text-gray-900">Member Status:</strong>
-                <span className="text-gray-700"> Track who is active, pending, or inactive.</span>
+                <span className="text-gray-700"> Track who is active, pending, or inactive in the stokvel.</span>
+              </div>
+            </li>
+            <li className="flex gap-3">
+              <span className="text-green-600">•</span>
+              <div>
+                <strong className="text-gray-900">Rotation Order:</strong>
+                <span className="text-gray-700"> Set and adjust the order in which members receive payouts.</span>
               </div>
             </li>
           </ul>
           <p className="text-gray-600 mt-4 text-sm">
-            Admins can manage permissions and remove or reinstate members at any time.
+            Admins can manage permissions, update member details, and remove or reinstate members at any time.
           </p>
         </section>
 

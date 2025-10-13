@@ -245,6 +245,65 @@ export interface Database {
           updated_at?: string
         }
       }
+      stokvel_invitations: {
+        Row: {
+          id: string
+          stokvel_id: string
+          invited_by: string
+          full_name: string
+          email: string
+          contact_number: string | null
+          token: string
+          role: 'admin' | 'member'
+          rotation_order: number | null
+          max_uses: number
+          current_uses: number
+          status: 'pending' | 'accepted' | 'expired' | 'revoked'
+          expires_at: string
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          stokvel_id: string
+          invited_by: string
+          full_name: string
+          email: string
+          contact_number?: string | null
+          token: string
+          role?: 'admin' | 'member'
+          rotation_order?: number | null
+          max_uses?: number
+          current_uses?: number
+          status?: 'pending' | 'accepted' | 'expired' | 'revoked'
+          expires_at: string
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          stokvel_id?: string
+          invited_by?: string
+          full_name?: string
+          email?: string
+          contact_number?: string | null
+          token?: string
+          role?: 'admin' | 'member'
+          rotation_order?: number | null
+          max_uses?: number
+          current_uses?: number
+          status?: 'pending' | 'accepted' | 'expired' | 'revoked'
+          expires_at?: string
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       stokvel_summary: {
@@ -285,6 +344,7 @@ export type UserStokvel = Database['public']['Tables']['user_stokvels']['Row']
 export type StokvelMember = Database['public']['Tables']['user_stokvel_members']['Row']
 export type StokvelContribution = Database['public']['Tables']['stokvel_contributions']['Row']
 export type StokvelPayout = Database['public']['Tables']['stokvel_payouts']['Row']
+export type StokvelInvitation = Database['public']['Tables']['stokvel_invitations']['Row']
 export type StokvelSummary = Database['public']['Views']['stokvel_summary']['Row']
 
 // Extended stokvel with type information
@@ -349,4 +409,39 @@ export interface CreateStokvelData {
     contact_number?: string
     role: 'admin' | 'member'
   }[]
+}
+
+// Invitation types
+export interface CreateInvitationData {
+  stokvel_id: string
+  full_name: string
+  email: string
+  contact_number?: string
+  role?: 'admin' | 'member'
+  rotation_order?: number
+}
+
+export interface ValidatedInvitation {
+  id: string
+  stokvel_id: string
+  stokvel_name: string
+  full_name: string
+  email: string
+  contact_number: string | null
+  role: 'admin' | 'member'
+  rotation_order: number | null
+  expires_at: string
+  is_valid: boolean
+}
+
+export interface AcceptInvitationResult {
+  success: boolean
+  error?: string
+  stokvel_id?: string
+  member_id?: string
+}
+
+// Invitation with stokvel information
+export type InvitationWithStokvel = StokvelInvitation & {
+  stokvel: UserStokvel
 }
