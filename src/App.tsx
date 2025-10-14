@@ -28,9 +28,8 @@ function App() {
       <InstallPrompt />
       <HelpSystem />
       <Routes>
+        {/* Public routes - must come first */}
         <Route path="/login" element={<Login />} />
-
-        {/* Public invitation route (no authentication required) */}
         <Route path="/invite/:token" element={<AcceptInvitation />} />
 
         {/* Multi-stokvel routes (full-screen, no layout) */}
@@ -80,30 +79,30 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
-        {/* Legacy single-stokvel routes (with layout) */}
+
+        {/* Protected routes with layout */}
         <Route
-          path="/*"
+          path="/"
           element={
             <ProtectedRoute>
               <Layout>
                 <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/my-stokvels" element={<MyStokvels />} />
-                  <Route path="/members" element={<Members />} />
-                  <Route path="/contributions" element={<Contributions />} />
-                  <Route path="/payouts" element={<Payouts />} />
-                  <Route path="/reports" element={<Reports />} />
-                  <Route path="/settings" element={<Settings />} />
-                  
+                  <Route index element={<Dashboard />} />
+                  <Route path="my-stokvels" element={<MyStokvels />} />
+                  <Route path="members" element={<Members />} />
+                  <Route path="contributions" element={<Contributions />} />
+                  <Route path="payouts" element={<Payouts />} />
+                  <Route path="reports" element={<Reports />} />
+                  <Route path="settings" element={<Settings />} />
+
                   {/* Stokvel-specific routes */}
-                  <Route path="/stokvel/:stokvelId/dashboard" element={<Dashboard />} />
-                  <Route path="/stokvel/:stokvelId/members" element={<Members />} />
-                  <Route path="/stokvel/:stokvelId/contributions" element={<Contributions />} />
-                  <Route path="/stokvel/:stokvelId/payouts" element={<Payouts />} />
-                  <Route path="/stokvel/:stokvelId/reports" element={<Reports />} />
-                  <Route path="/stokvel/:stokvelId/settings" element={<Settings />} />
-                  <Route path="/stokvel/:stokvelId/fairness" element={<FairnessDashboard />} />
+                  <Route path="stokvel/:stokvelId/dashboard" element={<Dashboard />} />
+                  <Route path="stokvel/:stokvelId/members" element={<Members />} />
+                  <Route path="stokvel/:stokvelId/contributions" element={<Contributions />} />
+                  <Route path="stokvel/:stokvelId/payouts" element={<Payouts />} />
+                  <Route path="stokvel/:stokvelId/reports" element={<Reports />} />
+                  <Route path="stokvel/:stokvelId/settings" element={<Settings />} />
+                  <Route path="stokvel/:stokvelId/fairness" element={<FairnessDashboard />} />
                 </Routes>
               </Layout>
             </ProtectedRoute>

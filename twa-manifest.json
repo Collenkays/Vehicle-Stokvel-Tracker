@@ -1,0 +1,45 @@
+{
+  "$schema": "https://raw.githubusercontent.com/GoogleChromeLabs/bubblewrap/main/packages/core/src/spec/TwaManifest.schema.json",
+  "packageId": "xyz.vikoba.app",
+  "host": "www.vikoba.xyz",
+  "name": "Vikoba - Vehicle Stokvel Tracker",
+  "launcherName": "Vikoba",
+  "display": "standalone",
+  "themeColor": "#3b82f6",
+  "navigationColor": "#3b82f6",
+  "navigationColorDark": "#1e40af",
+  "navigationDividerColor": "#3b82f6",
+  "navigationDividerColorDark": "#1e40af",
+  "backgroundColor": "#ffffff",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://www.vikoba.xyz/icons/icon-512x512.png",
+  "maskableIconUrl": "https://www.vikoba.xyz/icons/icon-512x512.png",
+  "monochromeIconUrl": "",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "android"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://www.vikoba.xyz/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": {
+      "enabled": false
+    },
+    "playBilling": {
+      "enabled": false
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "isChromeOSOnly": false,
+  "minSdkVersion": 19,
+  "targetSdkVersion": 33,
+  "orientation": "default"
+}
