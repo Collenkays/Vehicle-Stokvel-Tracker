@@ -35,3 +35,12 @@ dist-ssr
 
 # SQL Archive (old debugging/iteration files)
 .sql-archive/
+
+# Android build artifacts
+android.keystore
+*.apk
+*.aab
+app-release-signed.apk
+app-release-bundle.aab
+/app/
+/android/

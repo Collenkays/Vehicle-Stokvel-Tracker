@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Car, AlertCircle, CheckCircle, Plus, Calendar, Calculator } from 'lucide-react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { usePayouts, useGeneratePayout, useCompletePayout, useDeletePayout } from '../hooks/usePayouts'
-import { useNextPayoutRecipient } from '../hooks/useMembers'
+import { useDashboardStats } from '../hooks/useDashboard'
 import { supabase } from '../lib/supabase'
 import { StokvelMember } from '../types/multi-stokvel'
 import { StokvelLogicEngine } from '../services/StokvelLogicEngine'
@@ -18,10 +18,21 @@ export const Payouts = () => {
   const [members, setMembers] = useState<StokvelMember[]>([])
 
   const { data: payouts, isLoading } = usePayouts(stokvelId)
-  const { data: nextRecipient } = useNextPayoutRecipient()
+  const { data: dashboardStats } = useDashboardStats(stokvelId)
+  const nextRecipient = dashboardStats?.nextPayoutRecipient || null
   const generatePayout = useGeneratePayout()
   const completePayout = useCompletePayout()
   const deletePayout = useDeletePayout()
+
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 Payouts Page Debug:', {
+      stokvelId,
+      dashboardStats,
+      nextRecipient,
+      nextRecipientName: nextRecipient?.full_name
+    })
+  }, [stokvelId, dashboardStats, nextRecipient])
 
   // Fetch members for the stokvel if stokvelId is provided
   useEffect(() => {
