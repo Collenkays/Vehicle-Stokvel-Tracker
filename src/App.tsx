@@ -18,8 +18,15 @@ import { FAQ } from './pages/FAQ'
 import { UserGuide } from './pages/UserGuide'
 import { AcceptInvitation } from './pages/AcceptInvitation'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { PublicRoute } from './components/PublicRoute'
 import { InstallPrompt } from './components/InstallPrompt'
 import { HelpSystem } from './components/HelpSystem'
+import { LandingPage } from './pages/LandingPage'
+import { Features } from './pages/Features'
+import { Pricing } from './pages/Pricing'
+import { About } from './pages/About'
+import { Contact } from './pages/Contact'
+import { AuthDebug } from './pages/AuthDebug'
 
 function App() {
   return (
@@ -28,9 +35,61 @@ function App() {
       <InstallPrompt />
       <HelpSystem />
       <Routes>
-        {/* Public routes - must come first */}
-        <Route path="/login" element={<Login />} />
+        {/* Public marketing routes */}
+        <Route
+          path="/"
+          element={
+            <PublicRoute>
+              <LandingPage />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/features"
+          element={
+            <PublicRoute redirectIfAuthenticated={false}>
+              <Features />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/pricing"
+          element={
+            <PublicRoute redirectIfAuthenticated={false}>
+              <Pricing />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/about"
+          element={
+            <PublicRoute redirectIfAuthenticated={false}>
+              <About />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/contact"
+          element={
+            <PublicRoute redirectIfAuthenticated={false}>
+              <Contact />
+            </PublicRoute>
+          }
+        />
+
+        {/* Public auth routes */}
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
         <Route path="/invite/:token" element={<AcceptInvitation />} />
+
+        {/* Debug route - remove in production */}
+        <Route path="/auth-debug" element={<AuthDebug />} />
 
         {/* Multi-stokvel routes (full-screen, no layout) */}
         <Route
@@ -82,28 +141,81 @@ function App() {
 
         {/* Protected routes with layout */}
         <Route
-          path="/"
+          path="/my-stokvels/*"
           element={
             <ProtectedRoute>
               <Layout>
-                <Routes>
-                  <Route index element={<Dashboard />} />
-                  <Route path="my-stokvels" element={<MyStokvels />} />
-                  <Route path="members" element={<Members />} />
-                  <Route path="contributions" element={<Contributions />} />
-                  <Route path="payouts" element={<Payouts />} />
-                  <Route path="reports" element={<Reports />} />
-                  <Route path="settings" element={<Settings />} />
-
-                  {/* Stokvel-specific routes */}
-                  <Route path="stokvel/:stokvelId/dashboard" element={<Dashboard />} />
-                  <Route path="stokvel/:stokvelId/members" element={<Members />} />
-                  <Route path="stokvel/:stokvelId/contributions" element={<Contributions />} />
-                  <Route path="stokvel/:stokvelId/payouts" element={<Payouts />} />
-                  <Route path="stokvel/:stokvelId/reports" element={<Reports />} />
-                  <Route path="stokvel/:stokvelId/settings" element={<Settings />} />
-                  <Route path="stokvel/:stokvelId/fairness" element={<FairnessDashboard />} />
-                </Routes>
+                <MyStokvels />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stokvel/:stokvelId/dashboard"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Dashboard />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stokvel/:stokvelId/members"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Members />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stokvel/:stokvelId/contributions"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Contributions />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stokvel/:stokvelId/payouts"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Payouts />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stokvel/:stokvelId/reports"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Reports />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stokvel/:stokvelId/settings"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Settings />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stokvel/:stokvelId/fairness"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <FairnessDashboard />
               </Layout>
             </ProtectedRoute>
           }
