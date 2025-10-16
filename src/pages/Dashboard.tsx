@@ -1,15 +1,215 @@
-import { CreditCard, TrendingUp, AlertCircle, CheckCircle, Calculator } from 'lucide-react'
+import { CreditCard, TrendingUp, AlertCircle, CheckCircle, Calculator, Users, Wallet, Eye, ArrowRight, Grid3X3 } from 'lucide-react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { useDashboardStats, useMonthlyContributionTrends, usePayoutHistory } from '../hooks/useDashboard'
-import { useUserStokvel } from '../hooks/useUserStokvels'
+import { useUserStokvel, useUserStokvelMemberships, useStokvelSummaries } from '../hooks/useUserStokvels'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
+import { Badge } from '../components/ui/badge'
 import { formatCurrency } from '../utils/currency'
 import { formatDate } from '../utils/date'
 import { getStokvelCardContent, getStokvelTypeDisplayName } from '../utils/stokvelCardContent'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
 import { HelpTooltip } from '../components/HelpTooltip'
 import { AdDisplay } from '../components/AdBanner'
+import { useAuth } from '../contexts/AuthContext'
+
+// Multi-Stokvel Overview Component
+const MultiStokvelOverview = () => {
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const { data: stokvels = [], isLoading: stokvelsLoading } = useUserStokvelMemberships()
+  const { data: summaries = [] } = useStokvelSummaries()
+
+  if (stokvelsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  // If no stokvels, redirect to My Stokvels
+  if (stokvels.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-12">
+          <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <Grid3X3 className="h-12 w-12 text-gray-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to Vehicle Stokvel Tracker</h2>
+          <p className="text-gray-600 mb-6">
+            You're not part of any stokvels yet. Create your first stokvel or join an existing one to get started.
+          </p>
+          <Button onClick={() => navigate('/create-stokvel')}>
+            Create Your First Stokvel
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Calculate aggregate statistics
+  const totalMembers = summaries.reduce((sum, s) => sum + s.member_count, 0)
+  const totalContributions = summaries.reduce((sum, s) => sum + s.total_verified_contributions, 0)
+  const totalPayouts = summaries.reduce((sum, s) => sum + s.total_payouts, 0)
+  const totalBalance = totalContributions - totalPayouts
+
+  // Get user's personal contribution stats (assuming we can query this)
+  // For now, we'll show aggregate data
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">My Dashboard</h1>
+        <p className="text-gray-600 mt-1">
+          Overview of all your stokvel memberships and contributions
+        </p>
+      </div>
+
+      {/* Aggregate Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Stokvels</CardTitle>
+            <Grid3X3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stokvels.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {stokvels.filter(s => s.membership_role === 'admin').length} as admin
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalBalance)}</div>
+            <p className="text-xs text-muted-foreground">
+              Across all stokvels
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Contributions</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(totalContributions)}</div>
+            <p className="text-xs text-muted-foreground">
+              Verified payments
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Members</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalMembers}</div>
+            <p className="text-xs text-muted-foreground">
+              Across all stokvels
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* My Stokvels List */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>My Stokvels</CardTitle>
+              <CardDescription>Quick access to all your stokvel memberships</CardDescription>
+            </div>
+            <Button variant="outline" onClick={() => navigate('/my-stokvels')}>
+              View All
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {stokvels.map((stokvel) => {
+              const summary = summaries.find(s => s.id === stokvel.id)
+              const balance = summary
+                ? summary.total_verified_contributions - summary.total_payouts
+                : 0
+              const progress = stokvel.target_amount
+                ? (balance / stokvel.target_amount) * 100
+                : 0
+
+              return (
+                <div
+                  key={stokvel.id}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/stokvel/${stokvel.id}/dashboard`)}
+                >
+                  <div className="flex items-center space-x-4 flex-1">
+                    <div className="text-3xl">{stokvel.stokvel_type?.icon}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-900">{stokvel.name}</h3>
+                        <Badge variant={stokvel.membership_role === 'admin' ? 'default' : 'secondary'}>
+                          {stokvel.membership_role}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600">{stokvel.stokvel_type?.name}</p>
+                      <div className="flex items-center gap-4 mt-2 text-sm">
+                        <span className="flex items-center text-gray-600">
+                          <Users className="h-4 w-4 mr-1" />
+                          {summary?.member_count || 0} members
+                        </span>
+                        <span className="flex items-center text-gray-600">
+                          <Wallet className="h-4 w-4 mr-1" />
+                          {formatCurrency(balance, stokvel.currency)}
+                        </span>
+                        {stokvel.membership_rotation_order && (
+                          <span className="text-gray-600">
+                            Position #{stokvel.membership_rotation_order}
+                          </span>
+                        )}
+                      </div>
+                      {stokvel.target_amount && (
+                        <div className="mt-2">
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-blue-500 h-2 rounded-full transition-all"
+                              style={{ width: `${Math.min(progress, 100)}%` }}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {progress.toFixed(1)}% to target
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm">
+                    <Eye className="h-4 w-4 mr-2" />
+                    View
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Ad Placement */}
+      <AdDisplay slot="YOUR_AD_SLOT_1" />
+    </div>
+  )
+}
 
 export const Dashboard = () => {
   const { stokvelId } = useParams<{ stokvelId?: string }>()
@@ -18,6 +218,11 @@ export const Dashboard = () => {
   const { data: stats, isLoading: statsLoading } = useDashboardStats(stokvelId)
   const { data: monthlyTrends, isLoading: trendsLoading } = useMonthlyContributionTrends(stokvelId)
   const { data: payoutHistory, isLoading: payoutLoading } = usePayoutHistory(stokvelId)
+
+  // If no stokvelId, show multi-stokvel overview
+  if (!stokvelId) {
+    return <MultiStokvelOverview />
+  }
 
   if (statsLoading) {
     return (
