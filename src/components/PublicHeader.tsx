@@ -19,13 +19,16 @@ export const PublicHeader = () => {
             <span className="text-xl font-bold text-gray-900">Vikoba</span>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - Updated with Blog */}
           <div className="hidden md:flex items-center space-x-8">
             <Link to="/features" className="text-gray-600 hover:text-gray-900 transition-colors">
               Features
             </Link>
             <Link to="/pricing" className="text-gray-600 hover:text-gray-900 transition-colors">
               Pricing
+            </Link>
+            <Link to="/blog" className="text-gray-600 hover:text-gray-900 transition-colors">
+              Blog
             </Link>
             <Link to="/about" className="text-gray-600 hover:text-gray-900 transition-colors">
               About
@@ -78,6 +81,13 @@ export const PublicHeader = () => {
               onClick={() => setMobileMenuOpen(false)}
             >
               Pricing
+            </Link>
+            <Link
+              to="/blog"
+              className="block text-gray-600 hover:text-gray-900 py-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Blog
             </Link>
             <Link
               to="/about"

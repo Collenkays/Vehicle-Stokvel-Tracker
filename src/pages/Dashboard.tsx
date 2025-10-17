@@ -1,6 +1,5 @@
 import { CreditCard, TrendingUp, AlertCircle, CheckCircle, Calculator, Users, Wallet, Eye, ArrowRight, Grid3X3 } from 'lucide-react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
 import { useDashboardStats, useMonthlyContributionTrends, usePayoutHistory } from '../hooks/useDashboard'
 import { useUserStokvel, useUserStokvelMemberships, useStokvelSummaries } from '../hooks/useUserStokvels'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
@@ -12,12 +11,10 @@ import { getStokvelCardContent, getStokvelTypeDisplayName } from '../utils/stokv
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
 import { HelpTooltip } from '../components/HelpTooltip'
 import { AdDisplay } from '../components/AdBanner'
-import { useAuth } from '../contexts/AuthContext'
 
 // Multi-Stokvel Overview Component
 const MultiStokvelOverview = () => {
   const navigate = useNavigate()
-  const { user } = useAuth()
   const { data: stokvels = [], isLoading: stokvelsLoading } = useUserStokvelMemberships()
   const { data: summaries = [] } = useStokvelSummaries()
 

@@ -249,6 +249,7 @@ export const LandingPage = () => {
               <ul className="space-y-2 text-gray-400">
                 <li><a href="/features" className="hover:text-white">Features</a></li>
                 <li><a href="/pricing" className="hover:text-white">Pricing</a></li>
+                <li><a href="/blog" className="hover:text-white">Blog</a></li>
                 <li><a href="/faq" className="hover:text-white">FAQ</a></li>
               </ul>
             </div>

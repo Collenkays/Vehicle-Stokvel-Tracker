@@ -18,18 +18,9 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({
   const { user, loading } = useAuth()
   const navigate = useNavigate()
 
-  // Debug logging - remove in production
-  console.log('PublicRoute:', {
-    user: user ? 'authenticated' : 'not authenticated',
-    loading,
-    redirectIfAuthenticated,
-    path: window.location.pathname
-  })
-
   useEffect(() => {
     if (!loading && user && redirectIfAuthenticated) {
       // Redirect authenticated users to dashboard
-      console.log('PublicRoute: Redirecting authenticated user to /my-stokvels')
       navigate('/my-stokvels')
     }
   }, [user, loading, navigate, redirectIfAuthenticated])
@@ -45,10 +36,8 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({
   // If redirectIfAuthenticated is false, allow both authenticated and unauthenticated users
   // If redirectIfAuthenticated is true, only render for unauthenticated users
   if (redirectIfAuthenticated && user) {
-    console.log('PublicRoute: User is authenticated, returning null')
     return null
   }
 
-  console.log('PublicRoute: Rendering children')
   return <>{children}</>
 }
