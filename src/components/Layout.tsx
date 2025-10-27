@@ -36,11 +36,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const pathStokvelId = location.pathname.match(/\/stokvel\/([^/]+)/)?.[1]
   const stokvelId = params.stokvelId || pathStokvelId
   const { data: currentStokvel } = useUserStokvel(stokvelId || '')
-
-  // Debug log
-  console.log('Layout - stokvelId from params:', params.stokvelId)
-  console.log('Layout - stokvelId from path:', pathStokvelId)
-  console.log('Layout - final stokvelId:', stokvelId)
   
   // Navigation items that adjust based on whether we're in a specific stokvel context
   const getNavigation = () => {

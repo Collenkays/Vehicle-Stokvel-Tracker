@@ -97,9 +97,9 @@ export const useDashboardStats = (stokvelId?: string) => {
       if (payoutsError) throw payoutsError
 
       // Get current month contributions
-      const currentMonth = new Date().toLocaleDateString('en-ZA', { 
-        year: 'numeric', 
-        month: 'long' 
+      const currentMonth = new Date().toLocaleDateString('en-ZA', {
+        year: 'numeric',
+        month: 'long'
       })
 
       const currentMonthContributions = contributions

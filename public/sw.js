@@ -1,5 +1,5 @@
-const CACHE_NAME = 'vikoba-v1';
-const RUNTIME_CACHE = 'vikoba-runtime';
+const CACHE_NAME = 'vikoba-v2';
+const RUNTIME_CACHE = 'vikoba-runtime-v2';
 
 // Assets to cache on install
 const STATIC_ASSETS = [

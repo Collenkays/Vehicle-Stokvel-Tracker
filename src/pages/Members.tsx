@@ -217,10 +217,16 @@ const StokvelMembersManagement = () => {
   const conductLottery = useConductLottery()
   const revokeInvitation = useRevokeInvitation()
 
-  // Calculate next rotation order
-  const nextRotationOrder = members.length > 0
-    ? Math.max(...members.map(m => m.rotation_order || 0)) + 1
-    : 1
+  // Calculate next rotation order (including both active members and pending invitations)
+  const nextRotationOrder = (() => {
+    const memberRotations = members.map(m => m.rotation_order || 0)
+    const invitationRotations = pendingInvitations.map(inv => inv.rotation_order || 0)
+    const allRotations = [...memberRotations, ...invitationRotations]
+
+    return allRotations.length > 0
+      ? Math.max(...allRotations) + 1
+      : 1
+  })()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -321,7 +327,10 @@ const StokvelMembersManagement = () => {
                 <Mail className="mr-2 h-4 w-4" />
                 Invite Member
               </Button>
-              <Button onClick={() => setShowForm(true)}>
+              <Button onClick={() => {
+                setFormData({ ...initialFormData, rotation_order: nextRotationOrder })
+                setShowForm(true)
+              }}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Member
               </Button>
